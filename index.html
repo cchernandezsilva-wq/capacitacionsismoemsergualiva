@@ -1,0 +1,2411 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Capacitación Sismos: Antes, Durante y Después - EMSERGUALIVA S.A. E.S.P.</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Playfair+Display:ital,wght@0,600;0,700;1,600&display=swap"
+    rel="stylesheet">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#0088A8',
+            primaryHover: '#00708a',
+            secondary: '#0F2C59',
+            accent: '#02C39A',
+            accentDark: '#019f7e',
+            bgLight: '#F8FAFC'
+          },
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            serif: ['Playfair Display', 'serif'],
+          },
+          boxShadow: {
+            'premium': '0 10px 25px rgba(0,0,0,0.06)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <!-- html2pdf.js -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+
+  <style>
+    :root {
+      --primary: #0088A8;
+      --secondary: #0F2C59;
+      --accent: #02C39A;
+    }
+
+    body {
+      background-color: #F8FAFC;
+      color: #1A2530;
+      overflow-x: hidden;
+      scroll-behavior: smooth;
+    }
+
+    .glass-card {
+      background: rgba(255, 255, 255, 0.97);
+      backdrop-filter: blur(10px);
+      border: 1px solid rgba(226, 232, 240, 0.9);
+      box-shadow: 0 12px 30px rgba(15, 44, 89, 0.06);
+      border-radius: 20px;
+      transition: all 0.3s ease;
+    }
+
+    .section-view {
+      display: none;
+      opacity: 0;
+    }
+
+    .section-view.active {
+      display: block;
+      opacity: 1;
+      animation: slideUp 0.35s ease-out forwards;
+    }
+
+    .slide-card {
+      animation: slideUp 0.3s ease-out forwards;
+    }
+
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(14px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    @keyframes quake {
+      0%, 100% { transform: translate(0, 0) rotate(0); }
+      15% { transform: translate(-2px, 1px) rotate(-2deg); }
+      30% { transform: translate(2px, -1px) rotate(2deg); }
+      45% { transform: translate(-1px, -1px) rotate(-1deg); }
+      60% { transform: translate(1px, 1px) rotate(1deg); }
+    }
+
+    .quake-icon {
+      display: inline-block;
+      animation: quake 2.4s ease-in-out infinite;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(0, 136, 168, 0.2);
+    }
+
+    /* 3D Flip Mini Cards */
+    .flip-box {
+      perspective: 1000px;
+      cursor: pointer;
+    }
+
+    .flip-box-inner {
+      display: grid;
+      grid-template-columns: 1fr;
+      width: 100%;
+      min-height: 230px;
+      transition: transform 0.55s cubic-bezier(0.34, 1.56, 0.64, 1);
+      transform-style: preserve-3d;
+    }
+
+    .flip-box.flipped .flip-box-inner {
+      transform: rotateY(180deg);
+    }
+
+    .flip-box-front,
+    .flip-box-back {
+      grid-area: 1 / 1;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      border-radius: 20px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+
+    .flip-box-back {
+      transform: rotateY(180deg);
+    }
+
+    /* Certificate Print Container */
+    #certificado-print {
+      width: 297mm;
+      height: 210mm;
+      padding: 15mm;
+      background-color: #ffffff;
+      position: relative;
+      box-sizing: border-box;
+      margin: 0 auto;
+      background: radial-gradient(circle, #ffffff 50%, #f0f7f9 100%);
+    }
+
+    .cert-border {
+      border: 12px solid var(--secondary);
+      outline: 4px solid var(--primary);
+      outline-offset: -20px;
+      padding: 15mm;
+      height: 100%;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.05);
+    }
+
+    .cert-border::before {
+      content: "";
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 55%;
+      height: 55%;
+      background-image: url('logo.png');
+      background-size: contain;
+      background-position: center;
+      background-repeat: no-repeat;
+      opacity: 0.12;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .cert-content {
+      z-index: 10;
+    }
+
+    .cert-container-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      display: flex;
+      justify-content: center;
+      padding: 8px 0;
+    }
+
+    @media screen and (max-width: 1150px) {
+      #certificado-print { transform: scale(0.8); transform-origin: top center; margin-bottom: -42mm; }
+    }
+    @media screen and (max-width: 850px) {
+      #certificado-print { transform: scale(0.6); transform-origin: top center; margin-bottom: -84mm; }
+    }
+    @media screen and (max-width: 600px) {
+      #certificado-print { transform: scale(0.4); transform-origin: top center; margin-bottom: -126mm; }
+    }
+    @media screen and (max-width: 400px) {
+      #certificado-print { transform: scale(0.3); transform-origin: top center; margin-bottom: -147mm; }
+    }
+
+    .radio-custom:checked+label {
+      border-color: var(--primary);
+      background-color: rgba(0, 136, 168, 0.06);
+    }
+
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 44, 89, 0.7);
+      backdrop-filter: blur(4px);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      padding: 16px;
+    }
+
+    .modal-overlay.active {
+      display: flex;
+      opacity: 1;
+    }
+
+    #video-noskip-banner {
+      display: none;
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 20;
+      background: rgba(15, 44, 89, 0.94);
+      color: #fff;
+      border: 2px solid #02C39A;
+      border-radius: 14px;
+      padding: 14px 22px;
+      text-align: center;
+      pointer-events: none;
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+      max-width: 90%;
+    }
+
+    #video-noskip-banner.visible {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+  </style>
+</head>
+
+<body class="flex flex-col min-h-screen">
+
+  <!-- HEADER AMPLIO Y RESPONSIVO -->
+  <header class="bg-white/95 backdrop-blur-md shadow-sm sticky top-0 z-40 border-b border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-3">
+      <a href="https://www.emsergualiva.gov.co/" target="_blank"
+        class="flex items-center gap-4 hover:opacity-80 transition-opacity min-w-0">
+        <img src="logo.png" alt="Logo EMSERGUALIVA" class="h-12 sm:h-14 w-auto object-contain flex-shrink-0"
+          onerror="this.style.display='none'; document.getElementById('logo-fallback').style.display='block';">
+        <div id="logo-fallback" style="display:none;" class="bg-primary/10 text-primary p-2.5 rounded-xl">
+          <i data-lucide="droplet" class="w-8 h-8"></i>
+        </div>
+        <div class="min-w-0">
+          <h1 class="text-secondary font-black text-base sm:text-xl leading-tight truncate">EMSERGUALIVA S.A. E.S.P.</h1>
+          <p class="text-xs sm:text-sm text-gray-500 font-semibold truncate">Nocaima, Cundinamarca • SG-SST</p>
+        </div>
+      </a>
+
+      <!-- Mobile Pill -->
+      <div id="mobile-progress-pill" class="flex md:hidden items-center">
+        <span id="mobile-prog-text"
+          class="px-3.5 py-1.5 rounded-full text-xs sm:text-sm font-black bg-primary/10 text-primary border border-primary/25">
+          1. Registro
+        </span>
+      </div>
+
+      <!-- Desktop Steps -->
+      <div id="progress-container" class="hidden md:flex items-center gap-3 text-sm font-bold">
+        <div class="flex items-center gap-2 text-primary" id="prog-1">
+          <span class="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-xs font-black shadow-sm">1</span>
+          <span>Registro</span>
+        </div>
+        <div class="w-8 h-px bg-gray-300"></div>
+        <div class="flex items-center gap-2 text-gray-400" id="prog-2">
+          <span class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-black">2</span>
+          <span>Video</span>
+        </div>
+        <div class="w-8 h-px bg-gray-300"></div>
+        <div class="flex items-center gap-2 text-gray-400" id="prog-3">
+          <span class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-black">3</span>
+          <span>Módulos</span>
+        </div>
+        <div class="w-8 h-px bg-gray-300"></div>
+        <div class="flex items-center gap-2 text-gray-400" id="prog-4">
+          <span class="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs font-black">4</span>
+          <span>Evaluación</span>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="flex-grow flex flex-col relative w-full overflow-hidden">
+
+    <!-- ========================================== -->
+    <!-- 1. BIENVENIDA Y REGISTRO (GRANDE Y LLAMATIVO) -->
+    <!-- ========================================== -->
+    <section id="view-register" class="section-view active flex-grow relative overflow-hidden">
+      <video autoplay loop muted playsinline
+        class="absolute inset-0 w-full h-full object-cover z-0 opacity-15 pointer-events-none">
+        <source src="VIDEO.mp4" type="video/mp4">
+      </video>
+
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 min-h-[calc(100vh-8.5rem)] flex items-center relative z-10">
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center w-full">
+
+          <!-- Left: Impact Info (7 cols) -->
+          <div class="lg:col-span-7 space-y-7 text-center lg:text-left">
+            <div class="inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-orange-100 text-orange-800 border border-orange-200 text-sm sm:text-base font-extrabold shadow-xs">
+              <i data-lucide="activity" class="w-5 h-5 quake-icon text-orange-600"></i>
+              <span>Capacitación Interactiva SG-SST</span>
+            </div>
+
+            <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black text-secondary leading-tight tracking-tight">
+              Actuación Ante un <span class="text-primary">Sismo:</span><br>
+              <span class="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">
+                Antes, Durante y Después
+              </span>
+            </h1>
+
+            <p class="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto lg:mx-0 leading-relaxed font-medium">
+              Recorrido rápido por tarjetas visuales paso a paso. Aprende a protegerte y evacuar sin textos largos.
+            </p>
+
+            <!-- 3 Big Golden Rules -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-2xl mx-auto lg:mx-0">
+              <div class="bg-white rounded-2xl p-5 shadow-premium border-b-4 border-orange-500 text-center">
+                <span class="text-4xl sm:text-5xl block mb-1.5">🧎</span>
+                <span class="font-black text-secondary text-base sm:text-lg block">1. AGÁCHATE</span>
+                <span class="text-xs sm:text-sm text-gray-500 font-medium">Conserva el equilibrio</span>
+              </div>
+              <div class="bg-white rounded-2xl p-5 shadow-premium border-b-4 border-primary text-center">
+                <span class="text-4xl sm:text-5xl block mb-1.5">🛡️</span>
+                <span class="font-black text-secondary text-base sm:text-lg block">2. CÚBRETE</span>
+                <span class="text-xs sm:text-sm text-gray-500 font-medium">Protege cabeza y cuello</span>
+              </div>
+              <div class="bg-white rounded-2xl p-5 shadow-premium border-b-4 border-accent text-center">
+                <span class="text-4xl sm:text-5xl block mb-1.5">✊</span>
+                <span class="font-black text-secondary text-base sm:text-lg block">3. SUJÉTATE</span>
+                <span class="text-xs sm:text-sm text-gray-500 font-medium">Hasta que deje de temblar</span>
+              </div>
+            </div>
+
+            <!-- 3 Badges -->
+            <div class="flex flex-wrap justify-center lg:justify-start gap-3 pt-1 text-sm sm:text-base font-bold text-gray-700">
+              <span class="bg-white px-4 py-2.5 rounded-2xl border border-gray-200 shadow-xs flex items-center gap-2">
+                <i data-lucide="layers" class="w-5 h-5 text-primary"></i> 3 Módulos por ítems
+              </span>
+              <span class="bg-white px-4 py-2.5 rounded-2xl border border-gray-200 shadow-xs flex items-center gap-2">
+                <i data-lucide="award" class="w-5 h-5 text-accent"></i> Certificado PDF
+              </span>
+              <span class="bg-red-50 text-red-700 px-4 py-2.5 rounded-2xl border border-red-200 shadow-xs flex items-center gap-2">
+                <i data-lucide="phone-call" class="w-5 h-5"></i> Emergencias: 123
+              </span>
+            </div>
+          </div>
+
+          <!-- Right: Registration Form (5 cols) -->
+          <div class="lg:col-span-5 glass-card p-8 sm:p-10 lg:p-12 border-2 border-primary/20 shadow-2xl">
+            <h2 class="text-2xl sm:text-3xl font-black text-secondary mb-2">Registro de Participante</h2>
+            <p class="text-gray-500 text-sm sm:text-base mb-7">Ingresa tus datos para generar tu certificado oficial.</p>
+
+            <form id="register-form" class="space-y-6">
+              <div>
+                <label class="block text-sm sm:text-base font-bold text-gray-700 mb-2" for="reg-nombre">
+                  Nombre y Apellidos Completos *
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                    <i data-lucide="user" class="w-6 h-6"></i>
+                  </div>
+                  <input type="text" id="reg-nombre" required
+                    class="block w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-2xl bg-white capitalize text-base sm:text-lg font-medium"
+                    placeholder="Ej. Juan Pérez">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-sm sm:text-base font-bold text-gray-700 mb-2" for="reg-cedula">
+                  Cédula de Ciudadanía *
+                </label>
+                <div class="relative">
+                  <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400">
+                    <i data-lucide="id-card" class="w-6 h-6"></i>
+                  </div>
+                  <input type="number" id="reg-cedula" required
+                    class="block w-full pl-12 pr-4 py-4 border-2 border-gray-300 rounded-2xl bg-white text-base sm:text-lg font-medium"
+                    placeholder="Ej. 1072467385">
+                </div>
+              </div>
+
+              <button type="submit" id="btn-start"
+                class="w-full flex justify-center items-center gap-2.5 py-4 px-6 rounded-2xl shadow-lg text-base sm:text-lg font-black text-white bg-gradient-to-r from-primary to-secondary hover:opacity-95 transition-all hover:scale-[1.01]">
+                <span>Iniciar Capacitación</span>
+                <i data-lucide="arrow-right" class="w-6 h-6"></i>
+              </button>
+            </form>
+          </div>
+
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 2. VIDEO DE SENSIBILIZACIÓN (GRANDE 16:9) -->
+    <!-- ========================================== -->
+    <section id="view-video" class="section-view py-8 sm:py-12">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <div class="text-center mb-6">
+          <span class="inline-block px-4 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs sm:text-sm font-extrabold uppercase mb-2">
+            Paso 1 • Video Instructivo
+          </span>
+          <h2 class="text-2xl sm:text-4xl font-black text-secondary">Video: Prevención y Respuesta ante Sismos</h2>
+        </div>
+
+        <div class="glass-card overflow-hidden mb-7 shadow-2xl">
+          <div class="relative w-full pb-[56.25%] bg-gray-900">
+            <video id="cap-video" class="absolute top-0 left-0 w-full h-full bg-black" controls preload="metadata"
+              controlsList="nodownload noremoteplayback">
+              <source src="VIDEO1.mp4" type="video/mp4">
+              <source src="https://cchernandezsilva-wq.github.io/capacitacionsismoemsergualiva/VIDEO1.mp4" type="video/mp4">
+              <source src="https://raw.githubusercontent.com/cchernandezsilva-wq/capacitacionsismoemsergualiva/main/VIDEO1.mp4" type="video/mp4">
+              Tu navegador no soporta el reproductor de videos.
+            </video>
+
+            <div id="video-noskip-banner">
+              <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none"
+                stroke="#02C39A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="8" x2="12" y2="12" />
+                <line x1="12" y1="16" x2="12.01" y2="16" />
+              </svg>
+              <span class="text-sm sm:text-base font-bold text-left">
+                ⚠️ No puedes adelantar el video.<br>
+                <span class="text-xs sm:text-sm font-normal opacity-90">Debes ver el contenido completo para continuar.</span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-4">
+          <button id="btn-video-back"
+            class="text-gray-600 hover:text-secondary font-bold text-base sm:text-lg flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl hover:bg-gray-100">
+            <i data-lucide="arrow-left" class="w-5 h-5"></i> Volver a Inicio
+          </button>
+          <button id="btn-video-next" disabled
+            class="bg-gray-400 cursor-not-allowed text-white px-9 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all">
+            <i data-lucide="lock" class="w-5 h-5"></i>
+            <span>Observa el video completo para continuar</span>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 3. NAVEGADOR POR MÓDULOS Y POR ÍTEMS (GRANDE Y CLARO) -->
+    <!-- ========================================== -->
+    <section id="view-modules" class="section-view py-8 sm:py-12">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <!-- Selector Superior de los 3 Módulos -->
+        <div class="grid grid-cols-3 gap-3 sm:gap-4 mb-6">
+          <button type="button" id="mod-pill-0" onclick="window.jumpToModule(0)"
+            class="p-3.5 sm:p-4 rounded-2xl text-sm sm:text-lg font-black border-2 transition-all flex items-center justify-center gap-2 text-center">
+            <span class="text-xl sm:text-2xl">🌍</span>
+            <span class="truncate">Módulo 1: El Sismo</span>
+          </button>
+          <button type="button" id="mod-pill-1" onclick="window.jumpToModule(1)"
+            class="p-3.5 sm:p-4 rounded-2xl text-sm sm:text-lg font-black border-2 transition-all flex items-center justify-center gap-2 text-center">
+            <span class="text-xl sm:text-2xl">🛡️</span>
+            <span class="truncate">Módulo 2: 3 Fases</span>
+          </button>
+          <button type="button" id="mod-pill-2" onclick="window.jumpToModule(2)"
+            class="p-3.5 sm:p-4 rounded-2xl text-sm sm:text-lg font-black border-2 transition-all flex items-center justify-center gap-2 text-center">
+            <span class="text-xl sm:text-2xl">👷</span>
+            <span class="truncate">Módulo 3: Tu Labor</span>
+          </button>
+        </div>
+
+        <!-- Barra de Progreso de Ítems dentro del Módulo Actual -->
+        <div class="bg-white px-5 py-4 rounded-2xl border border-gray-200 mb-6 shadow-xs flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3 min-w-0">
+            <span id="item-module-badge" class="px-3.5 py-1 rounded-xl bg-primary/10 text-primary text-xs sm:text-sm font-black whitespace-nowrap">
+              Módulo 1 de 3
+            </span>
+            <span id="item-step-label" class="text-sm sm:text-base font-extrabold text-secondary truncate">
+              Ítem 1 de 4
+            </span>
+          </div>
+          <!-- Dots de los ítems del módulo actual -->
+          <div id="item-dots-container" class="flex items-center gap-2 flex-shrink-0"></div>
+        </div>
+
+        <!-- TARJETA ÚNICA DEL ÍTEM ACTUAL (GRANDE, VISUAL Y SIN TEXTO LARGO) -->
+        <div id="slide-item-container" class="glass-card p-6 sm:p-10 lg:p-12 min-h-[440px] flex flex-col justify-between mb-7 shadow-xl">
+          <!-- Renderizado dinámicamente por JS -->
+        </div>
+
+        <!-- Botones de Navegación por Ítem: Anterior / Siguiente o Continuar -->
+        <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-4">
+          <button type="button" id="btn-item-prev"
+            class="bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-4 rounded-2xl font-extrabold text-base sm:text-lg flex items-center justify-center gap-2.5 transition-all">
+            <i data-lucide="arrow-left" class="w-6 h-6"></i>
+            <span id="text-item-prev">Anterior</span>
+          </button>
+
+          <button type="button" id="btn-item-next"
+            class="bg-primary hover:bg-primaryHover text-white px-10 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg transition-all hover:scale-[1.01]">
+            <span id="text-item-next">Siguiente</span>
+            <i data-lucide="arrow-right" class="w-6 h-6"></i>
+          </button>
+        </div>
+
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 4. EVALUACIÓN FINAL (GRANDE Y LEGIBLE) -->
+    <!-- ========================================== -->
+    <section id="view-quiz" class="section-view py-8 sm:py-12">
+      <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <div class="text-center mb-7">
+          <span class="inline-block px-4 py-1.5 bg-orange-100 text-orange-800 rounded-full text-xs sm:text-sm font-extrabold uppercase mb-2">
+            Evaluación Final • Aprueba con 8 de 10 (80%)
+          </span>
+          <h2 class="text-2xl sm:text-4xl font-black text-secondary">¿Qué tanto aprendiste?</h2>
+        </div>
+
+        <div id="quiz-progress" class="flex flex-wrap justify-center gap-2.5 mb-6"></div>
+
+        <form id="quiz-form" class="space-y-6">
+          <div id="quiz-container"></div>
+
+          <div class="flex flex-col-reverse sm:flex-row justify-between items-stretch sm:items-center gap-4 pt-3 hidden" id="quiz-actions">
+            <button type="button" id="btn-quiz-back-modules"
+              class="text-gray-600 hover:text-secondary font-bold text-base flex items-center justify-center gap-2 py-3.5 px-6 rounded-2xl hover:bg-gray-100">
+              <i data-lucide="arrow-left" class="w-5 h-5"></i> Repasar Módulos
+            </button>
+
+            <button type="button" id="btn-next-question"
+              class="bg-primary hover:bg-primaryHover text-white px-9 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg">
+              <span>Siguiente Pregunta</span>
+              <i data-lucide="arrow-right" class="w-6 h-6"></i>
+            </button>
+
+            <button type="button" id="btn-submit-quiz"
+              class="hidden bg-accent hover:bg-accentDark text-white px-9 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg">
+              <span>Finalizar y Ver Certificado</span>
+              <i data-lucide="award" class="w-6 h-6"></i>
+            </button>
+          </div>
+        </form>
+
+      </div>
+    </section>
+
+    <!-- ========================================== -->
+    <!-- 5. VISTA DE CERTIFICADO -->
+    <!-- ========================================== -->
+    <section id="view-certificate" class="section-view py-8">
+      <div class="max-w-6xl mx-auto px-4 sm:px-6">
+
+        <div class="text-center mb-6">
+          <h2 class="text-2xl sm:text-3xl font-black text-secondary">¡Felicitaciones!</h2>
+          <p class="text-gray-600 text-sm sm:text-base mt-1">Aprobaste la capacitación de Prevención y Respuesta ante Sismos.</p>
+        </div>
+
+        <div class="cert-container-wrapper pb-6">
+          <div class="shadow-2xl rounded-sm bg-white" style="width: 297mm; height: 210mm; max-width: none;">
+            <div id="certificado-print">
+              <div class="cert-border">
+                <div class="cert-content w-full h-full flex flex-col items-center justify-center">
+                  <img src="logo.png" alt="Logo" class="h-16 mb-2 drop-shadow-md" onerror="this.style.display='none'">
+
+                  <h1 class="font-serif text-4xl font-extrabold text-secondary mb-1 tracking-widest uppercase shadow-sm"
+                    style="letter-spacing: 0.1em; color: var(--secondary);">Certificado de Aprobación</h1>
+                  <p class="text-primary text-lg mb-4 font-serif italic tracking-wide">EMSERGUALIVA S.A. E.S.P. -
+                    Nocaima, Cundinamarca</p>
+
+                  <p class="text-gray-500 mb-2 uppercase tracking-widest text-sm font-semibold">Hace constar que:</p>
+
+                  <h2 id="cert-nombre"
+                    class="font-serif text-4xl sm:text-5xl font-bold text-primary mb-2 text-center border-b-4 border-accent pb-2 inline-block min-w-[70%] drop-shadow-sm">
+                    [Nombre del Usuario]</h2>
+
+                  <p class="text-gray-600 text-lg mb-4">Con Cédula de Ciudadanía No. <strong id="cert-cedula"
+                      class="text-secondary font-bold text-xl">[Número]</strong></p>
+
+                  <p
+                    class="text-gray-700 text-lg sm:text-xl text-center max-w-4xl leading-relaxed mb-4 font-serif italic">
+                    Ha culminado y aprobado con éxito la capacitación institucional en:<br>
+                    <strong
+                      class="text-secondary font-sans font-bold text-xl sm:text-2xl mt-2 block not-italic uppercase tracking-wide">"SISMOS:
+                      PREPARACIÓN Y ACTUACIÓN ANTES, DURANTE Y DESPUÉS"</strong><br>
+                    <span class="inline-block mt-2 text-base sm:text-lg">con una calificación de <strong
+                        id="cert-puntaje" class="text-accent text-xl sm:text-2xl not-italic">[Puntaje]%</strong></span>
+                  </p>
+
+                  <div class="w-full flex justify-between mt-auto px-10 sm:px-20 translate-y-3">
+                    <div class="text-center w-64 flex flex-col items-center justify-end">
+                      <img src="FIRMA CELIS.jfif" alt="Firma Camila Celis" class="h-16 mix-blend-multiply translate-y-2"
+                        style="object-fit: contain;" onerror="this.style.display='none'">
+                      <div class="w-full h-px bg-gray-400 mb-1"></div>
+                      <p class="font-bold text-secondary text-lg leading-tight">Camila Celis</p>
+                      <p class="font-bold text-secondary text-sm">Profesional SG-SST</p>
+                      <p class="text-xs text-gray-500">EMSERGUALIVA</p>
+                    </div>
+                    <div class="text-center flex flex-col justify-end w-64 relative">
+                      <div class="text-sm text-gray-500 mb-2 font-serif">Fecha de Emisión:<br><span id="cert-fecha"
+                          class="font-semibold text-secondary text-lg"></span></div>
+                      <div id="cert-rayo" class="hidden absolute -right-2 bottom-2 text-amber-500">
+                        <i data-lucide="zap" class="w-5 h-5" fill="currentColor"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="flex flex-col sm:flex-row justify-center gap-3.5 mt-4 max-w-md sm:max-w-none mx-auto">
+          <button id="btn-download-cert"
+            class="bg-primary hover:bg-primaryHover text-white px-8 py-3.5 rounded-xl font-bold shadow-lg flex items-center justify-center gap-2">
+            <i data-lucide="download"></i> Descargar Certificado en PDF
+          </button>
+          <button id="btn-finish"
+            class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-8 py-3.5 rounded-xl font-bold shadow-sm flex items-center justify-center gap-2">
+            Finalizar y Salir
+          </button>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ========================================== -->
+    <!-- 6. PANEL DE ADMINISTRACIÓN -->
+    <!-- ========================================== -->
+    <section id="view-admin" class="section-view py-8">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-8">
+          <div>
+            <h2 class="text-2xl font-bold text-secondary">Panel de Control y Registro</h2>
+            <p class="text-gray-500 text-sm">Administración de Capacitados (Sismos) - EMSERGUALIVA</p>
+          </div>
+          <div class="flex gap-3">
+            <button id="btn-export-admin"
+              class="bg-accent hover:bg-accentDark text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 shadow-sm">
+              <i data-lucide="file-down" class="w-4 h-4"></i> Exportar Reporte
+            </button>
+            <button id="btn-logout-admin"
+              class="bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2">
+              <i data-lucide="log-out" class="w-4 h-4"></i> Salir
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div class="glass-card p-6 flex items-center gap-4 border-l-4 border-l-primary">
+            <div class="bg-primary/10 p-4 rounded-full text-primary">
+              <i data-lucide="users" class="w-8 h-8"></i>
+            </div>
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Total Personal Capacitado</p>
+              <h3 id="admin-total" class="text-3xl font-bold text-secondary mt-1">--</h3>
+            </div>
+          </div>
+          <div class="glass-card p-6 flex items-center gap-4 border-l-4 border-l-accent">
+            <div class="bg-accent/10 p-4 rounded-full text-accent">
+              <i data-lucide="bar-chart-2" class="w-8 h-8"></i>
+            </div>
+            <div>
+              <p class="text-gray-500 text-sm font-medium">Avance de Capacitación (Meta: 23)</p>
+              <h3 id="admin-promedio" class="text-3xl font-bold text-secondary mt-1">--%</h3>
+            </div>
+          </div>
+        </div>
+
+        <div class="glass-card overflow-hidden">
+          <div class="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between sm:items-center gap-3 bg-white">
+            <h3 class="font-bold text-secondary">Registros Recientes</h3>
+            <div class="relative">
+              <i data-lucide="search"
+                class="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4"></i>
+              <input type="text" id="admin-search" placeholder="Buscar por nombre o cédula..."
+                class="w-full sm:w-64 pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm">
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Nombre Completo</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Cédula</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Aprobación</th>
+                  <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Puntaje</th>
+                  <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="admin-table-body" class="bg-white divide-y divide-gray-200">
+                <tr>
+                  <td colspan="5" class="px-6 py-8 text-center text-gray-500">Cargando datos...</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer class="bg-white border-t border-gray-200 mt-auto py-4">
+    <div class="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row justify-between items-center gap-3">
+      <p class="text-xs text-gray-500 text-center sm:text-left">&copy; 2026 EMSERGUALIVA S.A. E.S.P. - Todos los derechos reservados.</p>
+      <button id="btn-open-admin"
+        class="text-xs text-gray-400 hover:text-primary transition-colors flex items-center gap-1">
+        <i data-lucide="lock" class="w-3 h-3"></i> Acceso Administrativo <i data-lucide="zap"
+          class="w-3 h-3 text-yellow-500"></i>
+      </button>
+    </div>
+  </footer>
+
+  <!-- MODALS -->
+  <div id="modal-error" class="modal-overlay">
+    <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center">
+      <div class="mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 text-red-500 mb-3">
+        <i data-lucide="x-circle" class="w-7 h-7"></i>
+      </div>
+      <h3 class="text-lg font-bold text-gray-900 mb-1">Evaluación No Aprobada</h3>
+      <p class="text-gray-500 text-sm mb-2">Puntaje: <strong id="error-score" class="text-red-500">0%</strong> (Mínimo 80%)</p>
+      <p class="text-xs text-gray-500 mb-5">Inténtalo nuevamente para obtener tu certificado.</p>
+      <button id="btn-retry-quiz"
+        class="w-full inline-flex justify-center rounded-xl bg-red-600 px-4 py-2.5 text-sm font-bold text-white hover:bg-red-700">
+        Reintentar Evaluación
+      </button>
+    </div>
+  </div>
+
+  <div id="modal-admin-login" class="modal-overlay">
+    <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-sm w-full p-7">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-secondary">Acceso Restringido</h3>
+        <button class="text-gray-400 hover:text-gray-600 close-admin-modal"><i data-lucide="x" class="w-5 h-5"></i></button>
+      </div>
+      <form id="admin-login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Clave de Administrador</label>
+          <input type="password" id="admin-pwd"
+            class="block w-full px-3 py-2 border border-gray-300 rounded-lg" placeholder="••••••••" required>
+        </div>
+        <p id="admin-error-msg" class="text-red-500 text-xs hidden">Clave incorrecta.</p>
+        <button type="submit" class="w-full bg-secondary text-white py-2.5 rounded-lg font-bold">Ingresar</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="toast"
+    class="fixed bottom-4 right-4 left-4 sm:left-auto bg-gray-900 text-white px-5 py-3.5 rounded-xl shadow-xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 max-w-md">
+    <i data-lucide="check-circle" class="text-accent w-5 h-5 flex-shrink-0"></i>
+    <span id="toast-msg" class="font-medium text-xs sm:text-sm"></span>
+  </div>
+
+  <div id="pecas-toast"
+    class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 scale-50 opacity-0 transition-all duration-500 z-[100] flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white px-10 py-8 rounded-3xl shadow-2xl border-4 border-white/50 pointer-events-none w-[90%] max-w-md">
+    <span class="font-serif italic font-bold text-4xl text-center leading-snug drop-shadow-lg flex items-center justify-center gap-2">
+      Pecas te quiero jeje <i data-lucide="zap" class="w-9 h-9 fill-yellow-300 text-yellow-300"></i>
+    </span>
+  </div>
+
+  <div id="modal-custom" class="modal-overlay">
+    <div class="modal-content bg-white rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center transform scale-50 opacity-0 transition-all duration-300" id="modal-custom-content">
+      <div id="modal-custom-icon" class="mx-auto flex items-center justify-center h-14 w-14 rounded-full mb-3"></div>
+      <h3 id="modal-custom-title" class="text-lg font-bold text-gray-900 mb-2"></h3>
+      <p id="modal-custom-text" class="text-xs sm:text-sm text-gray-500 mb-5"></p>
+      <div id="modal-custom-actions" class="flex justify-center gap-3 w-full">
+        <button id="modal-btn-cancel" class="hidden flex-1 rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-bold text-gray-700">Cancelar</button>
+        <button id="modal-btn-confirm" class="flex-1 rounded-xl bg-primary px-4 py-2 text-sm font-bold text-white">Aceptar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Report PDF Container -->
+  <div style="display: none;">
+    <div id="report-print" style="padding: 30px; font-family: 'Helvetica', 'Arial', sans-serif; background: #fff; width: 700px; box-sizing: border-box; color: #333;">
+      <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #0088A8; padding-bottom: 20px; margin-bottom: 25px;">
+        <div style="display: flex; align-items: center; gap: 15px;">
+          <img src="logo.png" style="width: 70px; height: auto;" />
+          <div>
+            <h1 style="color: #0F2C59; font-size: 20px; font-weight: bold; margin: 0;">EMSERGUALIVA S.A. E.S.P.</h1>
+            <p style="color: #666; font-size: 12px; margin: 5px 0 0 0;">Empresa de Servicios Públicos de Nocaima</p>
+          </div>
+        </div>
+        <div style="text-align: right;">
+          <h2 style="color: #0088A8; font-size: 14px; margin: 0; text-transform: uppercase;">Reporte Oficial</h2>
+          <p style="color: #777; font-size: 12px; margin: 5px 0 0 0;">Fecha: <strong id="report-date" style="color: #333;"></strong></p>
+        </div>
+      </div>
+
+      <div style="text-align: center; margin-bottom: 25px;">
+        <h3 style="font-size: 18px; color: #0F2C59; margin: 0;">LISTADO DE PERSONAL CAPACITADO</h3>
+        <p style="font-size: 13px; color: #555; margin: 5px 0 0 0;">Módulo: SISMOS - PREPARACIÓN Y ACTUACIÓN ANTES, DURANTE Y DESPUÉS</p>
+        <p style="font-size: 14px; color: #0088A8; margin: 10px 0 0 0; font-weight: bold;">Total Capacitados: <span id="report-total">0</span> <span style="color: #666; font-size: 12px; font-weight: normal; margin-left: 10px;">(Avance: <span id="report-porcentaje">0%</span>)</span></p>
+      </div>
+
+      <table style="width: 100%; border-collapse: collapse; margin-bottom: 30px;">
+        <thead>
+          <tr style="background-color: #0F2C59; color: white;">
+            <th style="padding: 10px; border: 1px solid #0F2C59; text-align: center; font-size: 12px; width: 40px;">#</th>
+            <th style="padding: 10px; border: 1px solid #0F2C59; text-align: left; font-size: 12px;">Nombre Completo</th>
+            <th style="padding: 10px; border: 1px solid #0F2C59; text-align: left; font-size: 12px;">Identificación</th>
+            <th style="padding: 10px; border: 1px solid #0F2C59; text-align: center; font-size: 12px;">Fecha Aprob.</th>
+            <th style="padding: 10px; border: 1px solid #0F2C59; text-align: center; font-size: 12px;">Puntaje</th>
+          </tr>
+        </thead>
+        <tbody id="report-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ========================================== -->
+  <!-- MOTOR INTERACTIVO POR MÓDULOS E ÍTEMS + FIREBASE -->
+  <!-- ========================================== -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-app.js";
+    import { getDatabase, ref, push, get, child, remove, query, orderByChild, equalTo } from "https://www.gstatic.com/firebasejs/10.8.1/firebase-database.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBW5lXr2FGOnX4ewLxHqXb73YNhKrChkNo",
+      authDomain: "ruleta-4ad2a.firebaseapp.com",
+      databaseURL: "https://ruleta-4ad2a-default-rtdb.firebaseio.com",
+      projectId: "ruleta-4ad2a",
+      storageBucket: "ruleta-4ad2a.firebasestorage.app",
+      messagingSenderId: "739576814236",
+      appId: "1:739576814236:web:dad4f68f47cc107c516b59",
+      measurementId: "G-EP2N6ZDLF9"
+    };
+
+    const DB_PATH = 'emsergualiva/TODASLASCAPACITACIONES/capacitacion2';
+
+    let app, db;
+    try {
+      app = initializeApp(firebaseConfig);
+      db = getDatabase(app);
+    } catch (e) {
+      console.error("Firebase init error:", e);
+    }
+
+    const state = {
+      user: { nombre: '', cedula: '', puntaje: 0, fechaAprobacion: null },
+      adminData: []
+    };
+
+    lucide.createIcons();
+
+    // Custom Alerts
+    window.customAlert = function (title, text, type = 'info') {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('modal-custom');
+        const content = document.getElementById('modal-custom-content');
+        document.getElementById('modal-custom-title').innerText = title;
+        document.getElementById('modal-custom-text').innerText = text;
+        const iconDiv = document.getElementById('modal-custom-icon');
+        iconDiv.className = type === 'warning'
+          ? 'mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-orange-100 text-orange-500 mb-3'
+          : 'mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-blue-100 text-blue-500 mb-3';
+        iconDiv.innerHTML = `<i data-lucide="${type === 'warning' ? 'alert-circle' : 'info'}" class="w-7 h-7"></i>`;
+        lucide.createIcons();
+        document.getElementById('modal-btn-cancel').classList.add('hidden');
+        modal.classList.add('active');
+        setTimeout(() => { content.classList.remove('scale-50', 'opacity-0'); content.classList.add('scale-100', 'opacity-100'); }, 10);
+        document.getElementById('modal-btn-confirm').onclick = () => {
+          content.classList.remove('scale-100', 'opacity-100'); content.classList.add('scale-50', 'opacity-0');
+          setTimeout(() => { modal.classList.remove('active'); resolve(true); }, 250);
+        };
+      });
+    };
+
+    window.customConfirm = function (title, text) {
+      return new Promise((resolve) => {
+        const modal = document.getElementById('modal-custom');
+        const content = document.getElementById('modal-custom-content');
+        document.getElementById('modal-custom-title').innerText = title;
+        document.getElementById('modal-custom-text').innerText = text;
+        const iconDiv = document.getElementById('modal-custom-icon');
+        iconDiv.className = 'mx-auto flex items-center justify-center h-14 w-14 rounded-full bg-red-100 text-red-500 mb-3';
+        iconDiv.innerHTML = '<i data-lucide="trash-2" class="w-7 h-7"></i>';
+        lucide.createIcons();
+        const btnCancel = document.getElementById('modal-btn-cancel');
+        btnCancel.classList.remove('hidden');
+        const btnConfirm = document.getElementById('modal-btn-confirm');
+        modal.classList.add('active');
+        setTimeout(() => { content.classList.remove('scale-50', 'opacity-0'); content.classList.add('scale-100', 'opacity-100'); }, 10);
+        const close = (val) => {
+          content.classList.remove('scale-100', 'opacity-100'); content.classList.add('scale-50', 'opacity-0');
+          setTimeout(() => { modal.classList.remove('active'); resolve(val); }, 250);
+        };
+        btnConfirm.onclick = () => close(true);
+        btnCancel.onclick = () => close(false);
+      });
+    };
+
+    function switchView(viewId) {
+      document.querySelectorAll('.section-view').forEach(v => v.classList.remove('active'));
+      const el = document.getElementById(viewId);
+      if (el) el.classList.add('active');
+      window.scrollTo(0, 0);
+      updateHeaderProgress(viewId);
+    }
+
+    function updateHeaderProgress(viewId) {
+      const container = document.getElementById('progress-container');
+      const mobilePill = document.getElementById('mobile-prog-text');
+      const mobileWrap = document.getElementById('mobile-progress-pill');
+
+      if (['view-admin', 'view-certificate'].includes(viewId)) {
+        if (container) container.style.display = 'none';
+        if (mobileWrap) mobileWrap.style.display = 'none';
+        return;
+      }
+      if (container) container.style.display = '';
+      if (mobileWrap) mobileWrap.style.display = '';
+
+      const map = { 'view-register': 1, 'view-video': 2, 'view-modules': 3, 'view-quiz': 4 };
+      const labels = { 'view-register': '1. Registro', 'view-video': '2. Video', 'view-modules': '3. Módulos', 'view-quiz': '4. Evaluación' };
+      const step = map[viewId] || 1;
+      if (mobilePill) mobilePill.innerText = labels[viewId] || 'Capacitación';
+
+      for (let i = 1; i <= 4; i++) {
+        const p = document.getElementById(`prog-${i}`);
+        if (!p) continue;
+        if (i <= step) {
+          p.classList.replace('text-gray-400', 'text-primary');
+          p.firstElementChild.classList.remove('bg-gray-200', 'text-gray-500');
+          p.firstElementChild.classList.add('bg-primary', 'text-white');
+        } else {
+          p.classList.replace('text-primary', 'text-gray-400');
+          p.firstElementChild.classList.remove('bg-primary', 'text-white');
+          p.firstElementChild.classList.add('bg-gray-200', 'text-gray-500');
+        }
+      }
+    }
+
+    // =====================================================
+    // CONTENIDO CORTO Y VISUAL POR MÓDULOS Y POR ÍTEMS
+    // (1 sola tarjeta a la vez, cero bloques largos de texto)
+    // =====================================================
+    const modulesData = [
+      // ================= MÓDULO 1: EL SISMO Y PELIGROS (4 ÍTEMS) =================
+      {
+        title: "Módulo 1: El Sismo y sus Peligros",
+        shortName: "Módulo 1 de 3",
+        items: [
+          {
+            badge: "Concepto Básico",
+            title: "🌍 ¿Qué es un Sismo?",
+            subtitle: "Movimiento repentino por liberación de energía de las placas tectónicas.",
+            html: `
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 my-5">
+                <div class="p-6 sm:p-8 rounded-3xl bg-blue-50 border-2 border-blue-200 text-center">
+                  <span class="text-5xl block mb-3">🧩</span>
+                  <h4 class="font-black text-secondary text-lg sm:text-xl">Placas Tectónicas</h4>
+                  <p class="text-sm sm:text-base text-gray-600 mt-2">Chocan y liberan energía en ondas sísmicas.</p>
+                </div>
+                <div class="p-6 sm:p-8 rounded-3xl bg-orange-50 border-2 border-orange-200 text-center">
+                  <span class="text-5xl block mb-3">🇨🇴</span>
+                  <h4 class="font-black text-secondary text-lg sm:text-xl">Amenaza en Colombia</h4>
+                  <p class="text-sm sm:text-base text-gray-600 mt-2">Ocurren de forma inesperada en cualquier momento.</p>
+                </div>
+                <div class="p-6 sm:p-8 rounded-3xl bg-emerald-50 border-2 border-emerald-200 text-center">
+                  <span class="text-5xl block mb-3">🎯</span>
+                  <h4 class="font-black text-secondary text-lg sm:text-xl">Nuestra Meta</h4>
+                  <p class="text-sm sm:text-base text-gray-600 mt-2">Cero miedo: saber identificarnos, protegernos y evacuar.</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "Glosario Visual",
+            title: "📍 6 Palabras Clave que Debes Saber",
+            subtitle: "Diferencia cada término de un vistazo:",
+            html: `
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 my-4">
+                <div class="p-5 rounded-2xl bg-slate-50 border-2 border-slate-200">
+                  <span class="text-sm sm:text-base font-black text-primary uppercase">⏬ Hipocentro</span>
+                  <p class="text-sm sm:text-base text-gray-700 mt-1.5">Punto <strong>adentro de la Tierra</strong> donde nace el sismo.</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-orange-50 border-2 border-orange-200">
+                  <span class="text-sm sm:text-base font-black text-orange-700 uppercase">📍 Epicentro</span>
+                  <p class="text-sm sm:text-base text-gray-700 mt-1.5">Punto en la <strong>superficie</strong> justo arriba del hipocentro.</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-red-50 border-2 border-red-200">
+                  <span class="text-sm sm:text-base font-black text-red-700 uppercase">⚡ Magnitud</span>
+                  <p class="text-sm sm:text-base text-gray-700 mt-1.5">Cantidad de <strong>energía</strong> liberada.</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-200">
+                  <span class="text-sm sm:text-base font-black text-emerald-700 uppercase">📊 Intensidad</span>
+                  <p class="text-sm sm:text-base text-gray-700 mt-1.5">Nivel de <strong>sacudida y daños</strong> en un lugar.</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-purple-50 border-2 border-purple-200">
+                  <span class="text-sm sm:text-base font-black text-purple-700 uppercase">🔄 Réplica</span>
+                  <p class="text-sm sm:text-base text-gray-700 mt-1.5">Sacudidas que ocurren <strong>después</strong> del sismo.</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-amber-50 border-2 border-amber-200">
+                  <span class="text-sm sm:text-base font-black text-amber-800 uppercase">〰️ Temblor / Terremoto</span>
+                  <p class="text-sm sm:text-base text-gray-700 mt-1.5">Leve vs. destructivo (depende de la firmeza del edificio).</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "Peligros en el Trabajo",
+            title: "⚠️ Los Principales Riesgos en un Sismo",
+            subtitle: "El peligro no es solo el suelo, sino lo que puede caer o fallar:",
+            html: `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+                <div class="p-5 sm:p-6 rounded-2xl bg-orange-50 border-2 border-orange-200 flex items-center gap-4">
+                  <span class="text-4xl">🗄️</span>
+                  <div>
+                    <h4 class="font-black text-secondary text-base sm:text-lg">1. Caída de Objetos</h4>
+                    <p class="text-sm sm:text-base text-gray-600 mt-0.5">Estanterías, archivadores, lámparas y herramientas.</p>
+                  </div>
+                </div>
+                <div class="p-5 sm:p-6 rounded-2xl bg-red-50 border-2 border-red-200 flex items-center gap-4">
+                  <span class="text-4xl">🧱</span>
+                  <div>
+                    <h4 class="font-black text-secondary text-base sm:text-lg">2. Daños Estructurales</h4>
+                    <p class="text-sm sm:text-base text-gray-600 mt-0.5">Grietas, caída de muros, techos o colapsos.</p>
+                  </div>
+                </div>
+                <div class="p-5 sm:p-6 rounded-2xl bg-amber-50 border-2 border-amber-200 flex items-center gap-4">
+                  <span class="text-4xl">⚡</span>
+                  <div>
+                    <h4 class="font-black text-secondary text-base sm:text-lg">3. Eléctrico e Incendio</h4>
+                    <p class="text-sm sm:text-base text-gray-600 mt-0.5">Cortocircuitos, cables caídos y fugas en tuberías.</p>
+                  </div>
+                </div>
+                <div class="p-5 sm:p-6 rounded-2xl bg-stone-100 border-2 border-stone-300 flex items-center gap-4">
+                  <span class="text-4xl">⛰️</span>
+                  <div>
+                    <h4 class="font-black text-secondary text-base sm:text-lg">4. Derrumbes y Pánico</h4>
+                    <p class="text-sm sm:text-base text-gray-600 mt-0.5">Deslizamientos en campo, vidrios rotos y caídas en escaleras.</p>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "Señalización Vital",
+            title: "🪧 4 Señales que Salvan tu Vida",
+            subtitle: "Identifícalas siempre al llegar a cualquier sede de EMSERGUALIVA:",
+            html: `
+              <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 my-5">
+                <div class="p-6 rounded-3xl bg-emerald-600 text-white text-center shadow-md">
+                  <span class="text-4xl sm:text-5xl block mb-2">🏃</span>
+                  <span class="font-black text-sm sm:text-base uppercase block">Salida de Emergencia</span>
+                  <span class="text-xs sm:text-sm text-white/90 block mt-1">Ruta para evacuar</span>
+                </div>
+                <div class="p-6 rounded-3xl bg-green-700 text-white text-center shadow-md">
+                  <span class="text-4xl sm:text-5xl block mb-2">📍</span>
+                  <span class="font-black text-sm sm:text-base uppercase block">Punto de Encuentro</span>
+                  <span class="text-xs sm:text-sm text-white/90 block mt-1">Zona segura exterior</span>
+                </div>
+                <div class="p-6 rounded-3xl bg-teal-600 text-white text-center shadow-md">
+                  <span class="text-4xl sm:text-5xl block mb-2">➕</span>
+                  <span class="font-black text-sm sm:text-base uppercase block">Primeros Auxilios</span>
+                  <span class="text-xs sm:text-sm text-white/90 block mt-1">Botiquín y camilla</span>
+                </div>
+                <div class="p-6 rounded-3xl bg-red-600 text-white text-center shadow-md">
+                  <span class="text-4xl sm:text-5xl block mb-2">🧯</span>
+                  <span class="font-black text-sm sm:text-base uppercase block">Extintor</span>
+                  <span class="text-xs sm:text-sm text-white/90 block mt-1">Para conatos de fuego</span>
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "🎮 Reto 1 • Solo Práctica (No Evaluable)",
+            title: "🕵️ Reto 1: Cazador de Peligros",
+            subtitle: "Toca los 4 peligros ocultos en el lugar de trabajo para asegurarlos antes del sismo:",
+            html: `
+              <div class="flex flex-wrap items-center justify-between gap-2 bg-amber-50 border-2 border-amber-200 px-4 py-3 rounded-2xl mb-4">
+                <span id="reto1-msg" class="text-sm sm:text-base font-bold text-amber-900">👆 Toca las tarjetas que representen un peligro real</span>
+                <span id="reto1-score" class="px-3.5 py-1 rounded-xl bg-amber-500 text-white text-xs sm:text-sm font-black">0 / 4 asegurados</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3.5 my-2">
+                <button type="button" onclick="window.tapReto1(this, true, '¡Estantería anclada a la pared!')" class="p-4 rounded-2xl border-2 border-orange-300 bg-orange-50 hover:bg-orange-100 text-left transition-all flex items-center gap-3.5">
+                  <span class="text-4xl">🗄️</span>
+                  <div>
+                    <p class="font-black text-secondary text-sm sm:text-base">Estantería sin asegurar</p>
+                    <span class="text-xs text-orange-700 font-bold r1-sub">Toca para inspeccionar</span>
+                  </div>
+                </button>
+                <button type="button" onclick="window.tapReto1(this, false, '¡Esta salida ya está despejada y segura!')" class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-left transition-all flex items-center gap-3.5">
+                  <span class="text-4xl">🚪</span>
+                  <div>
+                    <p class="font-black text-secondary text-sm sm:text-base">Salida libre y señalizada</p>
+                    <span class="text-xs text-gray-500 font-bold r1-sub">Toca para inspeccionar</span>
+                  </div>
+                </button>
+                <button type="button" onclick="window.tapReto1(this, true, '¡Cajas pesadas bajadas a nivel seguro!')" class="p-4 rounded-2xl border-2 border-orange-300 bg-orange-50 hover:bg-orange-100 text-left transition-all flex items-center gap-3.5">
+                  <span class="text-4xl">📦</span>
+                  <div>
+                    <p class="font-black text-secondary text-sm sm:text-base">Cajas pesadas en lo alto</p>
+                    <span class="text-xs text-orange-700 font-bold r1-sub">Toca para inspeccionar</span>
+                  </div>
+                </button>
+                <button type="button" onclick="window.tapReto1(this, true, '¡Pasillo de evacuación despejado!')" class="p-4 rounded-2xl border-2 border-orange-300 bg-orange-50 hover:bg-orange-100 text-left transition-all flex items-center gap-3.5">
+                  <span class="text-4xl">🚧</span>
+                  <div>
+                    <p class="font-black text-secondary text-sm sm:text-base">Pasillo con obstáculos</p>
+                    <span class="text-xs text-orange-700 font-bold r1-sub">Toca para inspeccionar</span>
+                  </div>
+                </button>
+                <button type="button" onclick="window.tapReto1(this, false, '¡El botiquín está bien instalado!')" class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:bg-slate-50 text-left transition-all flex items-center gap-3.5">
+                  <span class="text-4xl">🩹</span>
+                  <div>
+                    <p class="font-black text-secondary text-sm sm:text-base">Botiquín en pared firme</p>
+                    <span class="text-xs text-gray-500 font-bold r1-sub">Toca para inspeccionar</span>
+                  </div>
+                </button>
+                <button type="button" onclick="window.tapReto1(this, true, '¡Cables reparados y asegurados!')" class="p-4 rounded-2xl border-2 border-orange-300 bg-orange-50 hover:bg-orange-100 text-left transition-all flex items-center gap-3.5">
+                  <span class="text-4xl">🔌</span>
+                  <div>
+                    <p class="font-black text-secondary text-sm sm:text-base">Cables eléctricos sueltos</p>
+                    <span class="text-xs text-orange-700 font-bold r1-sub">Toca para inspeccionar</span>
+                  </div>
+                </button>
+              </div>
+            `
+          }
+        ]
+      },
+
+      // ================= MÓDULO 2: ANTES, DURANTE Y DESPUÉS (5 ÍTEMS) =================
+      {
+        title: "Módulo 2: Antes, Durante y Después",
+        shortName: "Módulo 2 de 3",
+        items: [
+          {
+            badge: "Fase 1 • ANTES",
+            title: "📋 ¿Qué hacer ANTES de un Sismo?",
+            subtitle: "4 acciones preventivas en tu puesto de trabajo:",
+            html: `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4">
+                <div class="p-5 rounded-2xl bg-blue-50 border-2 border-blue-200">
+                  <h4 class="font-black text-secondary text-base sm:text-lg">1. Reporta Peligros</h4>
+                  <p class="text-sm sm:text-base text-gray-600 mt-1.5">Asegura estanterías sueltas, baja objetos pesados y reporta cables dañados.</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-blue-50 border-2 border-blue-200">
+                  <h4 class="font-black text-secondary text-base sm:text-lg">2. Rutas Despejadas</h4>
+                  <p class="text-sm sm:text-base text-gray-600 mt-1.5">Conoce las salidas, el punto de encuentro y mantén pasillos sin obstáculos.</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-blue-50 border-2 border-blue-200">
+                  <h4 class="font-black text-secondary text-base sm:text-lg">3. Ubica Mesas Firmes</h4>
+                  <p class="text-sm sm:text-base text-gray-600 mt-1.5">Reconoce escritorios resistentes lejos de vidrios para cubrirte.</p>
+                </div>
+                <div class="p-5 rounded-2xl bg-amber-50 border-2 border-amber-200">
+                  <h4 class="font-black text-amber-900 text-base sm:text-lg">4. Kit y Simulacros</h4>
+                  <p class="text-sm sm:text-base text-amber-800 mt-1.5">Ten listo 🩹 Botiquín, 🔦 Linterna, 📣 Silbato, 💧 Agua y participa en simulacros.</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "Fase 2 • DURANTE",
+            title: "🛡️ DURANTE el Sismo: Los 3 Pasos",
+            subtitle: "¡No corras mientras tiembla! Si estás bajo techo aplica:",
+            html: `
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 my-5">
+                <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-orange-500 to-amber-600 text-white text-center shadow-lg">
+                  <span class="text-5xl block mb-2">🧎</span>
+                  <h4 class="font-black text-lg sm:text-xl">1. AGÁCHATE</h4>
+                  <p class="text-sm sm:text-base text-white/95 mt-1.5">Baja al suelo para no perder el equilibrio.</p>
+                </div>
+                <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-primary to-secondary text-white text-center shadow-lg">
+                  <span class="text-5xl block mb-2">🛡️</span>
+                  <h4 class="font-black text-lg sm:text-xl">2. CÚBRETE</h4>
+                  <p class="text-sm sm:text-base text-white/95 mt-1.5">Protege cabeza y cuello bajo una mesa firme lejos de vidrios.</p>
+                </div>
+                <div class="p-6 sm:p-7 rounded-3xl bg-gradient-to-br from-emerald-600 to-teal-700 text-white text-center shadow-lg">
+                  <span class="text-5xl block mb-2">✊</span>
+                  <h4 class="font-black text-lg sm:text-xl">3. SUJÉTATE</h4>
+                  <p class="text-sm sm:text-base text-white/95 mt-1.5">Agárrate firme hasta que termine la sacudida.</p>
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "Fase 2 • Escenarios",
+            title: "🧭 ¿Dónde te sorprende el sismo?",
+            subtitle: "Toca cada lugar para ver qué hacer en 3 puntos:",
+            html: `
+              <div class="flex flex-wrap gap-3 mb-4">
+                <button type="button" onclick="window.pickMiniScenario('oficina')" id="mscen-oficina" class="mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-primary text-white">🏢 Oficina</button>
+                <button type="button" onclick="window.pickMiniScenario('calle')" id="mscen-calle" class="mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary">🌳 Aire Libre</button>
+                <button type="button" onclick="window.pickMiniScenario('carro')" id="mscen-carro" class="mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary">🚗 Conduciendo</button>
+                <button type="button" onclick="window.pickMiniScenario('maquina')" id="mscen-maquina" class="mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary">⚙️ Maquinaria</button>
+                <button type="button" onclick="window.pickMiniScenario('escalera')" id="mscen-escalera" class="mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary">🪜 Escaleras</button>
+              </div>
+              <div id="mini-scenario-box" class="p-5 sm:p-6 rounded-2xl bg-slate-50 border-2 border-slate-200 text-sm sm:text-base space-y-3"></div>
+            `
+          },
+          {
+            badge: "Fase 3 • DESPUÉS",
+            title: "🚪 DESPUÉS del Sismo: Evacuación",
+            subtitle: "Cuando deje de temblar, sigue estas 4 reglas de oro:",
+            html: `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 my-4 text-sm sm:text-base font-bold">
+                <div class="p-5 rounded-2xl bg-emerald-50 border-2 border-emerald-200 text-emerald-900">
+                  ✅ 1. Camina sin correr ni empujar hacia el Punto de Encuentro.
+                </div>
+                <div class="p-5 rounded-2xl bg-red-50 border-2 border-red-200 text-red-900">
+                  ❌ 2. Prohibido usar ascensor o devolverse por celular o bolsos.
+                </div>
+                <div class="p-5 rounded-2xl bg-blue-50 border-2 border-blue-200 text-blue-900">
+                  👥 3. Reportarse en el conteo de la brigada y estar alerta a réplicas.
+                </div>
+                <div class="p-5 rounded-2xl bg-amber-50 border-2 border-amber-200 text-amber-900">
+                  🚫 4. NO reingresar al edificio sin revisión y autorización técnica.
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "Supervivencia y 123",
+            title: "🆘 Atrapados y Primeros Auxilios",
+            subtitle: "Dos protocolos críticos que pueden salvar una vida:",
+            html: `
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-5 my-4">
+                <div class="p-6 rounded-3xl bg-slate-900 text-white">
+                  <span class="text-sm font-black uppercase text-orange-400">Si quedas atrapado</span>
+                  <ul class="text-sm sm:text-base space-y-2.5 mt-3 text-white/95">
+                    <li>• Conserva la calma y cubre nariz/boca del polvo.</li>
+                    <li>• Toca un <strong>silbato</strong> o golpea un tubo/pared.</li>
+                    <li class="text-amber-300 font-bold">• 🔥 ¡NUNCA enciendas fósforos ni encendedor! (riesgo de gas).</li>
+                  </ul>
+                </div>
+                <div class="p-6 rounded-3xl bg-red-600 text-white">
+                  <span class="text-sm font-black uppercase text-amber-200">Primeros Auxilios • Línea 123</span>
+                  <ul class="text-sm sm:text-base space-y-2.5 mt-3 text-white/95">
+                    <li>• Prioriza respiración y hemorragias (presión directa).</li>
+                    <li>• <strong>No muevas</strong> a heridos de columna o cuello.</li>
+                    <li>• Al llamar al <strong>123</strong> di: ubicación, # heridos y peligros.</li>
+                  </ul>
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "🎮 Reto 2 • Solo Práctica (No Evaluable)",
+            title: "⚡ Reto 2: ¡Simulacro Relámpago!",
+            subtitle: "¡Está temblando! Toca en el orden correcto (Paso 1 → Paso 2 → Paso 3) cómo debes protegerte:",
+            html: `
+              <div class="flex flex-wrap items-center justify-between gap-2 bg-blue-50 border-2 border-blue-200 px-4 py-3 rounded-2xl mb-4">
+                <span id="reto2-msg" class="text-sm sm:text-base font-bold text-secondary">🎯 Toca primero el Paso #1</span>
+                <button type="button" onclick="window.resetReto2()" class="px-3 py-1 rounded-xl bg-white border border-blue-300 text-primary text-xs sm:text-sm font-black hover:bg-blue-100">🔄 Reiniciar Reto</button>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 my-3">
+                <button type="button" id="r2-btn-3" onclick="window.tapReto2(3, this)" class="p-6 rounded-3xl border-2 border-slate-200 bg-white hover:border-primary text-center transition-all shadow-sm">
+                  <span class="text-5xl block mb-2">✊</span>
+                  <h4 class="font-black text-secondary text-lg">SUJÉTATE</h4>
+                  <p class="text-xs sm:text-sm text-gray-500 mt-1">Agárrate firme hasta que pase</p>
+                </button>
+                <button type="button" id="r2-btn-1" onclick="window.tapReto2(1, this)" class="p-6 rounded-3xl border-2 border-slate-200 bg-white hover:border-primary text-center transition-all shadow-sm">
+                  <span class="text-5xl block mb-2">🧎</span>
+                  <h4 class="font-black text-secondary text-lg">AGÁCHATE</h4>
+                  <p class="text-xs sm:text-sm text-gray-500 mt-1">Baja al suelo para no caer</p>
+                </button>
+                <button type="button" id="r2-btn-2" onclick="window.tapReto2(2, this)" class="p-6 rounded-3xl border-2 border-slate-200 bg-white hover:border-primary text-center transition-all shadow-sm">
+                  <span class="text-5xl block mb-2">🛡️</span>
+                  <h4 class="font-black text-secondary text-lg">CÚBRETE</h4>
+                  <p class="text-xs sm:text-sm text-gray-500 mt-1">Protege cabeza y cuello</p>
+                </button>
+              </div>
+            `
+          }
+        ]
+      },
+
+      // ================= MÓDULO 3: MITOS, TU LABOR Y BRIGADA (4 ÍTEMS) =================
+      {
+        title: "Módulo 3: Mitos, Tu Labor y Brigada",
+        shortName: "Módulo 3 de 3",
+        items: [
+          {
+            badge: "Toca para Voltear",
+            title: "🤔 ¿Mito o Realidad?",
+            subtitle: "Toca cada tarjeta para girar y ver el veredicto oficial:",
+            html: `
+              <div class="grid grid-cols-1 sm:grid-cols-3 gap-5 my-4">
+                <div class="flip-box" onclick="this.classList.toggle('flipped')">
+                  <div class="flip-box-inner">
+                    <div class="flip-box-front bg-purple-600 text-white">
+                      <span class="text-4xl">🔺</span>
+                      <p class="font-extrabold text-base sm:text-lg">"El «Triángulo de la Vida» es la mejor técnica."</p>
+                      <span class="text-xs sm:text-sm text-purple-200 font-bold">👆 Toca para girar</span>
+                    </div>
+                    <div class="flip-box-back bg-red-50 border-2 border-red-400 text-red-900">
+                      <span class="font-black text-sm sm:text-base text-red-600">❌ ¡ES UN MITO!</span>
+                      <p class="text-sm sm:text-base">No es una técnica recomendada. Usa siempre: Agáchate, Cúbrete y Sujétate.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flip-box" onclick="this.classList.toggle('flipped')">
+                  <div class="flip-box-inner">
+                    <div class="flip-box-front bg-purple-600 text-white">
+                      <span class="text-4xl">🚪</span>
+                      <p class="font-extrabold text-base sm:text-lg">"Pararse bajo cualquier marco de puerta es seguro."</p>
+                      <span class="text-xs sm:text-sm text-purple-200 font-bold">👆 Toca para girar</span>
+                    </div>
+                    <div class="flip-box-back bg-red-50 border-2 border-red-400 text-red-900">
+                      <span class="font-black text-sm sm:text-base text-red-600">❌ ¡ES UN MITO!</span>
+                      <p class="text-sm sm:text-base">El marco de una puerta no garantiza protección y la puerta puede golpearte.</p>
+                    </div>
+                  </div>
+                </div>
+
+                <div class="flip-box" onclick="this.classList.toggle('flipped')">
+                  <div class="flip-box-inner">
+                    <div class="flip-box-front bg-purple-600 text-white">
+                      <span class="text-4xl">⚙️</span>
+                      <p class="font-extrabold text-base sm:text-lg">"No se debe reiniciar maquinaria sin inspección."</p>
+                      <span class="text-xs sm:text-sm text-purple-200 font-bold">👆 Toca para girar</span>
+                    </div>
+                    <div class="flip-box-back bg-emerald-50 border-2 border-emerald-400 text-emerald-900">
+                      <span class="font-black text-sm sm:text-base text-emerald-700">✅ ¡REALIDAD!</span>
+                      <p class="text-sm sm:text-base">Siempre se deben verificar cables, fugas y equipos antes de volver a operar.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "Según tu Área",
+            title: "👷 Actuación en EMSERGUALIVA",
+            subtitle: "Selecciona tu área para ver tus 3 reglas específicas:",
+            html: `
+              <div class="flex flex-wrap gap-3 mb-4">
+                <button type="button" onclick="window.pickMiniRole('admin')" id="mrole-admin" class="mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-primary text-white">💼 Oficina</button>
+                <button type="button" onclick="window.pickMiniRole('acueducto')" id="mrole-acueducto" class="mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary">💧 Acueducto/PTAP</button>
+                <button type="button" onclick="window.pickMiniRole('alcantarillado')" id="mrole-alcantarillado" class="mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary">🕳️ Alcantarillado</button>
+                <button type="button" onclick="window.pickMiniRole('aseo')" id="mrole-aseo" class="mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary">🧹 Aseo</button>
+                <button type="button" onclick="window.pickMiniRole('conductor')" id="mrole-conductor" class="mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary">🚛 Conductores</button>
+              </div>
+              <div id="mini-role-box" class="p-5 sm:p-6 rounded-2xl bg-blue-50/60 border-2 border-blue-200 text-sm sm:text-base space-y-3"></div>
+            `
+          },
+          {
+            badge: "Brigada y Ruta",
+            title: "🦺 Brigadistas y Ruta de Respuesta",
+            subtitle: "La brigada orienta la evacuación y el conteo (no reemplaza a Bomberos):",
+            html: `
+              <div class="space-y-3 my-4 text-sm sm:text-base font-bold">
+                <div class="p-4 rounded-2xl bg-red-500 text-white flex items-center gap-3">
+                  <span class="px-3 py-1 rounded-lg bg-black/25">1</span> Sismo detectado → Autoprotección inmediata (Agáchate, Cúbrete, Sujétate).
+                </div>
+                <div class="p-4 rounded-2xl bg-amber-500 text-white flex items-center gap-3">
+                  <span class="px-3 py-1 rounded-lg bg-black/25">2</span> Termina el movimiento → Revisar peligros: ¿Es seguro desplazarse?
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div class="p-4 rounded-2xl bg-emerald-600 text-white">✅ SÍ: Evacuar por ruta segura.</div>
+                  <div class="p-4 rounded-2xl bg-slate-700 text-white">❌ NO: Protegerse y pedir ayuda.</div>
+                </div>
+                <div class="p-4 rounded-2xl bg-primary text-white flex items-center gap-3">
+                  <span class="px-3 py-1 rounded-lg bg-black/25">3</span> Punto de Encuentro → Conteo de personal y autorización antes de retornar.
+                </div>
+              </div>
+            `
+          },
+          {
+            badge: "🎮 Reto 3 • Solo Práctica (No Evaluable)",
+            title: "🎒 Reto 3: Arma el Kit de Emergencia",
+            subtitle: "Toca los 4 elementos que SÍ deben ir en el Kit de Emergencia (y evita los 2 incorrectos):",
+            html: `
+              <div class="flex flex-wrap items-center justify-between gap-2 bg-emerald-50 border-2 border-emerald-200 px-4 py-3 rounded-2xl mb-4">
+                <span id="reto3-msg" class="text-sm sm:text-base font-bold text-emerald-900">🎒 Elige los 4 elementos vitales del Kit</span>
+                <span id="reto3-score" class="px-3.5 py-1 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-black">0 / 4 en el Kit</span>
+              </div>
+              <div class="grid grid-cols-2 sm:grid-cols-3 gap-3.5 my-2">
+                <button type="button" onclick="window.tapReto3(this, true, '¡Linterna empacada en el Kit!')" class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-emerald-400 text-center transition-all">
+                  <span class="text-4xl block mb-1">🔦</span>
+                  <p class="font-black text-secondary text-sm sm:text-base">Linterna</p>
+                  <span class="text-xs text-gray-400 font-bold r3-sub">Toca para elegir</span>
+                </button>
+                <button type="button" onclick="window.tapReto3(this, false, '¡Peligro! Nunca enciendas fósforos por posibles fugas de gas.')" class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-red-300 text-center transition-all">
+                  <span class="text-4xl block mb-1">🔥</span>
+                  <p class="font-black text-secondary text-sm sm:text-base">Fósforos y velas</p>
+                  <span class="text-xs text-gray-400 font-bold r3-sub">Toca para elegir</span>
+                </button>
+                <button type="button" onclick="window.tapReto3(this, true, '¡Silbato listo para pedir ayuda!')" class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-emerald-400 text-center transition-all">
+                  <span class="text-4xl block mb-1">📣</span>
+                  <p class="font-black text-secondary text-sm sm:text-base">Silbato</p>
+                  <span class="text-xs text-gray-400 font-bold r3-sub">Toca para elegir</span>
+                </button>
+                <button type="button" onclick="window.tapReto3(this, true, '¡Botiquín de primeros auxilios listo!')" class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-emerald-400 text-center transition-all">
+                  <span class="text-4xl block mb-1">🩹</span>
+                  <p class="font-black text-secondary text-sm sm:text-base">Botiquín</p>
+                  <span class="text-xs text-gray-400 font-bold r3-sub">Toca para elegir</span>
+                </button>
+                <button type="button" onclick="window.tapReto3(this, false, '¡Incorrecto! No lleves electrodomésticos ni objetos pesados.')" class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-red-300 text-center transition-all">
+                  <span class="text-4xl block mb-1">☕</span>
+                  <p class="font-black text-secondary text-sm sm:text-base">Cafetera eléctrica</p>
+                  <span class="text-xs text-gray-400 font-bold r3-sub">Toca para elegir</span>
+                </button>
+                <button type="button" onclick="window.tapReto3(this, true, '¡Agua potable empacada en el Kit!')" class="p-4 rounded-2xl border-2 border-slate-200 bg-white hover:border-emerald-400 text-center transition-all">
+                  <span class="text-4xl block mb-1">💧</span>
+                  <p class="font-black text-secondary text-sm sm:text-base">Agua potable</p>
+                  <span class="text-xs text-gray-400 font-bold r3-sub">Toca para elegir</span>
+                </button>
+              </div>
+            `
+          },
+          {
+            badge: "¡Módulos Completados!",
+            title: "🏅 Listo para la Evaluación Final",
+            subtitle: "Ya recorriste todos los ítems de la capacitación.",
+            html: `
+              <div class="p-8 rounded-3xl bg-gradient-to-br from-emerald-50 to-teal-50 border-2 border-emerald-300 text-center my-4 space-y-3">
+                <span class="text-6xl block">✅</span>
+                <h4 class="font-black text-secondary text-xl sm:text-2xl">Has completado los 3 módulos</h4>
+                <p class="text-base sm:text-lg text-gray-600 max-w-xl mx-auto">
+                  A continuación responderás <strong>10 preguntas rápidas</strong> (una por una). Apruebas con <strong>8 de 10 (80%)</strong> para descargar tu certificado oficial.
+                </p>
+              </div>
+            `
+          }
+        ]
+      }
+    ];
+
+    // Mini interactive data inside items
+    const miniScenarios = {
+      oficina: [
+        "🏢 <strong>1.</strong> No corras hacia la salida ni uses ascensores.",
+        "🛡️ <strong>2.</strong> Aléjate de ventanas y estanterías; métete bajo un escritorio firme.",
+        "🚪 <strong>3.</strong> Espera a que deje de temblar para evacuar."
+      ],
+      calle: [
+        "🌳 <strong>1.</strong> Quédate al aire libre; no entres a edificios.",
+        "⚡ <strong>2.</strong> Aléjate de postes, árboles, cables eléctricos y muros.",
+        "🧎 <strong>3.</strong> Agáchate si el movimiento es muy fuerte."
+      ],
+      carro: [
+        "🚗 <strong>1.</strong> Baja la velocidad poco a poco y oríllate en zona despejada.",
+        "🌉 <strong>2.</strong> No pares bajo puentes, postes, árboles ni cables.",
+        "🚨 <strong>3.</strong> Enciende estacionarias y quédate adentro hasta que pase."
+      ],
+      maquina: [
+        "⚙️ <strong>1.</strong> Tu vida va primero: no intentes salvar equipos.",
+        "🛑 <strong>2.</strong> Apaga la máquina solo si puedes hacerlo sin peligro y aléjate.",
+        "🔌 <strong>3.</strong> No la reinicies después sin revisión técnica."
+      ],
+      escalera: [
+        "🪜 <strong>1.</strong> No corras por las escaleras mientras tiembla.",
+        "✊ <strong>2.</strong> Sujétate fuerte del pasamanos y protege tu cabeza.",
+        "🚶 <strong>3.</strong> Cuando termine la sacudida, baja con precaución."
+      ]
+    };
+
+    const miniRoles = {
+      admin: [
+        "💼 <strong>Oficina:</strong> Asegura archivadores y lámparas antes de una emergencia.",
+        "🛡️ <strong>Durante:</strong> Aplica Agáchate, Cúbrete y Sujétate bajo tu escritorio.",
+        "📍 <strong>Después:</strong> Evacúa en orden sin devolverte por el celular."
+      ],
+      acueducto: [
+        "💧 <strong>Acueducto y PTAP:</strong> Aléjate de tanques, plataformas, bombas y químicos.",
+        "🚫 <strong>Después:</strong> No intervengas equipos dañados sin evaluación autorizada.",
+        "🧪 <strong>Agua:</strong> Si se altera la calidad del agua, activa el plan de contingencia."
+      ],
+      alcantarillado: [
+        "🕳️ <strong>Alcantarillado:</strong> Aléjate de excavaciones, zanjas y bordes inestables.",
+        "⛔ <strong>Prohibido:</strong> NO entres a pozos ni espacios confinados tras el sismo sin permiso y medición.",
+        "🚧 <strong>Vías:</strong> Señaliza tapas o colectores afectados."
+      ],
+      aseo: [
+        "🧹 <strong>Aseo y Recolección:</strong> Suspende el barrido y aléjate de postes, cables y muros.",
+        "🚛 <strong>Compactador:</strong> Aléjate de la parte trasera del camión recolector.",
+        "🧤 <strong>Escombros:</strong> No recojas vidrios, cortantes o químicos sin evaluación y EPP."
+      ],
+      conductor: [
+        "🚛 <strong>Conductores:</strong> Detén el vehículo en lugar abierto lejos de puentes y postes.",
+        "🛣️ <strong>Vías:</strong> Después del sismo, evita vías con derrumbes, grietas o cables caídos.",
+        "📻 <strong>Retorno:</strong> Continúa el recorrido solo cuando se autorice."
+      ]
+    };
+
+    window.pickMiniScenario = function (key) {
+      document.querySelectorAll('.mscen-btn').forEach(b => {
+        b.className = 'mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary hover:bg-slate-200 transition-all';
+      });
+      const active = document.getElementById(`mscen-${key}`);
+      if (active) active.className = 'mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-primary text-white shadow-md transition-all';
+      const box = document.getElementById('mini-scenario-box');
+      if (box && miniScenarios[key]) {
+        box.innerHTML = miniScenarios[key].map(line => `<div class="p-4 bg-white rounded-2xl border border-slate-200 text-sm sm:text-lg">${line}</div>`).join('');
+      }
+    };
+
+    window.pickMiniRole = function (key) {
+      document.querySelectorAll('.mrole-btn').forEach(b => {
+        b.className = 'mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary hover:bg-slate-200 transition-all';
+      });
+      const active = document.getElementById(`mrole-${key}`);
+      if (active) active.className = 'mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-primary text-white shadow-md transition-all';
+      const box = document.getElementById('mini-role-box');
+      if (box && miniRoles[key]) {
+        box.innerHTML = miniRoles[key].map(line => `<div class="p-4 bg-white rounded-2xl border border-blue-200 text-sm sm:text-lg">${line}</div>`).join('');
+      }
+    };
+
+    // =====================================================
+    // LÓGICA DE LOS 3 RETOS INTERACTIVOS (OBLIGATORIOS PARA AVANZAR, NO CALIFICABLES)
+    // =====================================================
+    const completedRetos = new Set();
+    let reto1Count = 0;
+    let reto2Step = 0;
+    let reto3Count = 0;
+
+    function showLockToast(msg) {
+      const toast = document.getElementById('toast');
+      if (!toast) return;
+      document.getElementById('toast-msg').innerText = msg;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3000);
+    }
+
+    function updateNextButtonState() {
+      const mod = modulesData[currentModIdx];
+      const item = mod.items[currentItemIdx];
+      const nextBtn = document.getElementById('btn-item-next');
+      if (!nextBtn) return;
+
+      const isLastItem = currentItemIdx === mod.items.length - 1;
+      const isLastMod = currentModIdx === modulesData.length - 1;
+
+      const isReto1 = item.title.includes('Reto 1');
+      const isReto2 = item.title.includes('Reto 2');
+      const isReto3 = item.title.includes('Reto 3');
+
+      if (isReto1 && !completedRetos.has(1)) {
+        nextBtn.disabled = true;
+        nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
+        nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 1 (${reto1Count}/4) para continuar</span>`;
+        lucide.createIcons();
+        return;
+      }
+      if (isReto2 && !completedRetos.has(2)) {
+        nextBtn.disabled = true;
+        nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
+        nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 2 (${reto2Step}/3) para continuar</span>`;
+        lucide.createIcons();
+        return;
+      }
+      if (isReto3 && !completedRetos.has(3)) {
+        nextBtn.disabled = true;
+        nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
+        nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 3 (${reto3Count}/4) para continuar</span>`;
+        lucide.createIcons();
+        return;
+      }
+
+      // Desbloqueado
+      nextBtn.disabled = false;
+      if (isLastItem && isLastMod) {
+        nextBtn.className = 'bg-accent hover:bg-accentDark text-white px-10 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg transition-all cursor-pointer';
+        nextBtn.innerHTML = `<span id="text-item-next">Ir a la Evaluación Final</span> <i data-lucide="arrow-right" class="w-6 h-6"></i>`;
+      } else if (isLastItem) {
+        nextBtn.className = 'bg-secondary hover:opacity-95 text-white px-10 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg transition-all cursor-pointer';
+        nextBtn.innerHTML = `<span id="text-item-next">Continuar al Módulo ${currentModIdx + 2}</span> <i data-lucide="arrow-right" class="w-6 h-6"></i>`;
+      } else {
+        nextBtn.className = 'bg-primary hover:bg-primaryHover text-white px-10 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg transition-all cursor-pointer';
+        nextBtn.innerHTML = `<span id="text-item-next">Siguiente</span> <i data-lucide="arrow-right" class="w-6 h-6"></i>`;
+      }
+      lucide.createIcons();
+    }
+
+    window.tapReto1 = function (btn, isHazard, msg) {
+      if (btn.dataset.done === '1') return;
+      const sub = btn.querySelector('.r1-sub');
+      const msgEl = document.getElementById('reto1-msg');
+      const scoreEl = document.getElementById('reto1-score');
+
+      if (isHazard) {
+        btn.dataset.done = '1';
+        reto1Count++;
+        btn.className = 'p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-left transition-all flex items-center gap-3.5 shadow-sm scale-[1.01]';
+        if (sub) {
+          sub.className = 'text-xs text-emerald-700 font-black r1-sub';
+          sub.innerText = '✅ ' + msg;
+        }
+        if (scoreEl) scoreEl.innerText = `${reto1Count} / 4 asegurados`;
+        if (reto1Count >= 4) {
+          completedRetos.add(1);
+          if (msgEl) msgEl.innerHTML = '🏆 <strong>¡Reto 1 Superado!</strong> Aseguraste los 4 peligros. Ya puedes continuar.';
+          if (scoreEl) scoreEl.className = 'px-3.5 py-1 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-black';
+        } else if (msgEl) {
+          msgEl.innerHTML = '✅ ' + msg;
+        }
+        updateNextButtonState();
+      } else {
+        btn.className = 'p-4 rounded-2xl border-2 border-blue-300 bg-blue-50 text-left transition-all flex items-center gap-3.5';
+        if (sub) {
+          sub.className = 'text-xs text-primary font-bold r1-sub';
+          sub.innerText = '👍 ' + msg;
+        }
+        if (msgEl) msgEl.innerHTML = '👍 ' + msg;
+      }
+    };
+
+    window.tapReto2 = function (stepNum, btn) {
+      const msgEl = document.getElementById('reto2-msg');
+      if (stepNum === reto2Step + 1) {
+        reto2Step = stepNum;
+        btn.className = 'p-6 rounded-3xl border-2 border-emerald-500 bg-emerald-50 text-center transition-all shadow-md scale-[1.02]';
+        if (reto2Step === 1 && msgEl) msgEl.innerHTML = '✅ <strong>¡Paso 1: AGÁCHATE!</strong> Ahora toca el Paso #2.';
+        if (reto2Step === 2 && msgEl) msgEl.innerHTML = '✅ <strong>¡Paso 2: CÚBRETE!</strong> Ahora toca el Paso #3.';
+        if (reto2Step === 3) {
+          completedRetos.add(2);
+          if (msgEl) msgEl.innerHTML = '🏆 <strong>¡Reto 2 Superado!</strong> 1. Agáchate → 2. Cúbrete → 3. Sujétate. Ya puedes continuar.';
+        }
+        updateNextButtonState();
+      } else if (stepNum > reto2Step + 1) {
+        const nombres = { 1: '1. AGÁCHATE', 2: '2. CÚBRETE', 3: '3. SUJÉTATE' };
+        if (msgEl) msgEl.innerHTML = `💡 ¡Casi! Primero debes tocar <strong>${nombres[reto2Step + 1]}</strong>.`;
+      }
+    };
+
+    window.resetReto2 = function () {
+      reto2Step = 0;
+      completedRetos.delete(2);
+      [1, 2, 3].forEach(n => {
+        const b = document.getElementById(`r2-btn-${n}`);
+        if (b) b.className = 'p-6 rounded-3xl border-2 border-slate-200 bg-white hover:border-primary text-center transition-all shadow-sm';
+      });
+      const msgEl = document.getElementById('reto2-msg');
+      if (msgEl) msgEl.innerHTML = '🎯 Toca primero el Paso #1';
+      updateNextButtonState();
+    };
+
+    window.tapReto3 = function (btn, isCorrect, msg) {
+      if (btn.dataset.done === '1') return;
+      const sub = btn.querySelector('.r3-sub');
+      const msgEl = document.getElementById('reto3-msg');
+      const scoreEl = document.getElementById('reto3-score');
+
+      if (isCorrect) {
+        btn.dataset.done = '1';
+        reto3Count++;
+        btn.className = 'p-4 rounded-2xl border-2 border-emerald-500 bg-emerald-50 text-center transition-all shadow-sm scale-[1.02]';
+        if (sub) {
+          sub.className = 'text-xs text-emerald-700 font-black r3-sub';
+          sub.innerText = '✅ En el Kit';
+        }
+        if (scoreEl) scoreEl.innerText = `${reto3Count} / 4 en el Kit`;
+        if (reto3Count >= 4) {
+          completedRetos.add(3);
+          if (msgEl) msgEl.innerHTML = '🏆 <strong>¡Reto 3 Superado!</strong> Tu Kit de Emergencia quedó completo. Ya puedes continuar.';
+        } else if (msgEl) {
+          msgEl.innerHTML = '✅ ' + msg;
+        }
+        updateNextButtonState();
+      } else {
+        btn.className = 'p-4 rounded-2xl border-2 border-red-400 bg-red-50 text-center transition-all';
+        if (sub) {
+          sub.className = 'text-xs text-red-600 font-black r3-sub';
+          sub.innerText = '❌ No va en el Kit';
+        }
+        if (msgEl) msgEl.innerHTML = '❌ ' + msg;
+      }
+    };
+
+    let currentModIdx = 0;
+    let currentItemIdx = 0;
+
+    function renderCurrentSlide() {
+      const mod = modulesData[currentModIdx];
+      const item = mod.items[currentItemIdx];
+
+      // Update top 3 module pills
+      modulesData.forEach((_, mIdx) => {
+        const pill = document.getElementById(`mod-pill-${mIdx}`);
+        if (!pill) return;
+        if (mIdx === currentModIdx) {
+          pill.className = 'p-3.5 sm:p-4 rounded-2xl text-sm sm:text-lg font-black border-2 border-primary bg-primary text-white shadow-md flex items-center justify-center gap-2 text-center';
+        } else if (mIdx < currentModIdx) {
+          pill.className = 'p-3.5 sm:p-4 rounded-2xl text-sm sm:text-lg font-black border-2 border-emerald-300 bg-emerald-50 text-emerald-800 flex items-center justify-center gap-2 text-center';
+        } else {
+          pill.className = 'p-3.5 sm:p-4 rounded-2xl text-sm sm:text-lg font-black border-2 border-gray-200 bg-white text-gray-500 flex items-center justify-center gap-2 text-center';
+        }
+      });
+
+      // Update item header badge and dots
+      document.getElementById('item-module-badge').innerText = mod.shortName;
+      document.getElementById('item-step-label').innerText = `Ítem ${currentItemIdx + 1} de ${mod.items.length}`;
+
+      const dotsContainer = document.getElementById('item-dots-container');
+      dotsContainer.innerHTML = '';
+      mod.items.forEach((_, idx) => {
+        const dot = document.createElement('button');
+        dot.type = 'button';
+        dot.onclick = () => {
+          if (idx > currentItemIdx) {
+            for (let k = currentItemIdx; k < idx; k++) {
+              const stepItem = mod.items[k];
+              if ((stepItem.title.includes('Reto 1') && !completedRetos.has(1)) ||
+                  (stepItem.title.includes('Reto 2') && !completedRetos.has(2)) ||
+                  (stepItem.title.includes('Reto 3') && !completedRetos.has(3))) {
+                showLockToast('🔒 Debes completar el reto del módulo para poder avanzar.');
+                return;
+              }
+            }
+          }
+          currentItemIdx = idx;
+          renderCurrentSlide();
+        };
+        dot.className = idx === currentItemIdx
+          ? 'w-8 h-3 rounded-full bg-primary transition-all'
+          : (idx < currentItemIdx ? 'w-3 h-3 rounded-full bg-accent transition-all' : 'w-3 h-3 rounded-full bg-gray-200 transition-all');
+        dotsContainer.appendChild(dot);
+      });
+
+      // Render card content
+      const container = document.getElementById('slide-item-container');
+      container.innerHTML = `
+        <div class="slide-card">
+          <div class="flex items-center justify-between gap-3 mb-3">
+            <span class="px-4 py-1.5 rounded-full bg-orange-100 text-orange-800 text-xs sm:text-sm font-black uppercase">${item.badge}</span>
+            <span class="text-xs sm:text-sm font-bold text-gray-400">${mod.title}</span>
+          </div>
+          <h3 class="text-2xl sm:text-3xl lg:text-4xl font-black text-secondary mb-2">${item.title}</h3>
+          <p class="text-base sm:text-lg text-gray-500 font-medium mb-5">${item.subtitle}</p>
+          ${item.html}
+        </div>
+        <div class="pt-4 border-t border-gray-100 flex items-center justify-between text-xs sm:text-sm font-bold text-gray-400">
+          <span>Paso ${currentItemIdx + 1} de ${mod.items.length}</span>
+          <span>${item.title.includes('Reto') ? '🔒 Reto obligatorio para avanzar' : 'Presiona "Siguiente" para avanzar'}</span>
+        </div>
+      `;
+
+      // Reset current reto counters if not yet completed
+      if (item.title.includes('Reto 1')) { reto1Count = 0; completedRetos.delete(1); }
+      if (item.title.includes('Reto 2')) { reto2Step = 0; completedRetos.delete(2); }
+      if (item.title.includes('Reto 3')) { reto3Count = 0; completedRetos.delete(3); }
+
+      if (document.getElementById('mini-scenario-box')) window.pickMiniScenario('oficina');
+      if (document.getElementById('mini-role-box')) window.pickMiniRole('admin');
+
+      updateNextButtonState();
+    }
+
+    window.jumpToModule = function (mIdx) {
+      if (mIdx >= 1 && !completedRetos.has(1)) {
+        showLockToast('🔒 Debes completar el Reto 1 del Módulo 1 antes de pasar al Módulo 2.');
+        return;
+      }
+      if (mIdx >= 2 && !completedRetos.has(2)) {
+        showLockToast('🔒 Debes completar el Reto 2 del Módulo 2 antes de pasar al Módulo 3.');
+        return;
+      }
+      currentModIdx = mIdx;
+      currentItemIdx = 0;
+      renderCurrentSlide();
+    };
+
+    document.getElementById('btn-item-next').addEventListener('click', () => {
+      const mod = modulesData[currentModIdx];
+      if (currentItemIdx < mod.items.length - 1) {
+        currentItemIdx++;
+        renderCurrentSlide();
+      } else if (currentModIdx < modulesData.length - 1) {
+        currentModIdx++;
+        currentItemIdx = 0;
+        renderCurrentSlide();
+      } else {
+        renderQuiz();
+        switchView('view-quiz');
+      }
+    });
+
+    document.getElementById('btn-item-prev').addEventListener('click', () => {
+      if (currentItemIdx > 0) {
+        currentItemIdx--;
+        renderCurrentSlide();
+      } else if (currentModIdx > 0) {
+        currentModIdx--;
+        currentItemIdx = modulesData[currentModIdx].items.length - 1;
+        renderCurrentSlide();
+      } else {
+        switchView('view-video');
+      }
+    });
+
+    // Video navigation
+    document.getElementById('btn-video-back').addEventListener('click', () => switchView('view-register'));
+    document.getElementById('btn-video-next').addEventListener('click', () => {
+      currentModIdx = 0;
+      currentItemIdx = 0;
+      renderCurrentSlide();
+      switchView('view-modules');
+    });
+
+    document.getElementById('btn-quiz-back-modules').addEventListener('click', () => {
+      currentModIdx = 0;
+      currentItemIdx = 0;
+      renderCurrentSlide();
+      switchView('view-modules');
+    });
+
+    // Video No-Skip & Mandatory Completion
+    (function () {
+      const video = document.getElementById('cap-video');
+      const banner = document.getElementById('video-noskip-banner');
+      const btnNext = document.getElementById('btn-video-next');
+      if (!video || !banner) return;
+
+      let maxWatchedTime = 0;
+      let bannerTimer = null;
+
+      function showNoSkipBanner() {
+        banner.classList.add('visible');
+        clearTimeout(bannerTimer);
+        bannerTimer = setTimeout(() => banner.classList.remove('visible'), 3000);
+      }
+
+      video.addEventListener('timeupdate', () => {
+        if (!video.seeking) {
+          if (video.currentTime > maxWatchedTime && video.currentTime - maxWatchedTime < 2) {
+            maxWatchedTime = video.currentTime;
+          }
+        }
+      });
+
+      video.addEventListener('seeking', () => {
+        if (video.currentTime > maxWatchedTime + 1.2) {
+          video.currentTime = maxWatchedTime;
+          showNoSkipBanner();
+        }
+      });
+
+      video.addEventListener('ratechange', () => {
+        if (video.playbackRate > 1) {
+          video.playbackRate = 1;
+          showNoSkipBanner();
+        }
+      });
+
+      video.addEventListener('ended', () => {
+        if (btnNext) {
+          btnNext.disabled = false;
+          btnNext.className = 'bg-accent hover:bg-accentDark text-white px-9 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg hover:scale-[1.01] transition-all cursor-pointer';
+          btnNext.innerHTML = '<span>¡Video Completado! Continuar a los Módulos</span> <i data-lucide="arrow-right" class="w-6 h-6"></i>';
+          lucide.createIcons();
+        }
+      });
+    })();
+
+    // =====================================================
+    // BANCO DE 10 PREGUNTAS OFICIALES (ORDEN Y OPCIONES ALEATORIAS)
+    // =====================================================
+    const quizQuestions = [
+      {
+        q: "¿Qué es un sismo?",
+        options: [
+          "Un movimiento de la corteza terrestre por liberación de energía.",
+          "Un cambio de temperatura.",
+          "Un fenómeno que siempre se puede predecir."
+        ],
+        answer: 0
+      },
+      {
+        q: "¿Qué debes hacer si comienza un sismo mientras trabajas en una oficina?",
+        options: [
+          "Salir corriendo por las escaleras.",
+          "Agacharte, cubrirte y sujetarte.",
+          "Acercarte a las ventanas."
+        ],
+        answer: 1
+      },
+      {
+        q: "¿Cuándo se debe evacuar después de un movimiento sísmico?",
+        options: [
+          "Mientras tiembla, sin importar el peligro.",
+          "Después del movimiento, cuando sea seguro y conforme al plan.",
+          "Solamente al finalizar la jornada."
+        ],
+        answer: 1
+      },
+      {
+        q: "¿Qué debes hacer si encuentras una ruta de evacuación bloqueada por escombros?",
+        options: [
+          "Cruzar los escombros rápidamente.",
+          "Buscar una alternativa segura y seguir las instrucciones.",
+          "Regresar por los objetos personales."
+        ],
+        answer: 1
+      },
+      {
+        q: "¿Cuál es una medida preventiva importante?",
+        options: [
+          "Bloquear las salidas para evitar el paso.",
+          "Asegurar estanterías y conocer rutas de evacuación.",
+          "Guardar objetos pesados en lugares altos."
+        ],
+        answer: 1
+      },
+      {
+        q: "Si un compañero queda atrapado, ¿qué debes hacer?",
+        options: [
+          "Ingresar sin equipos para rescatarlo.",
+          "Pedir apoyo de personal de socorro capacitado.",
+          "Mover todos los escombros sin evaluar."
+        ],
+        answer: 1
+      },
+      {
+        q: "¿Qué debe hacer un trabajador de acueducto si detecta daños en equipos después de un sismo?",
+        options: [
+          "Reiniciar de inmediato.",
+          "Manipular las conexiones dañadas.",
+          "Reportar y esperar la verificación y autorización."
+        ],
+        answer: 2
+      },
+      {
+        q: "¿Qué hacer si se presenta una réplica?",
+        options: [
+          "Volver a protegerse según el entorno.",
+          "Ingresar al edificio para recuperar pertenencias.",
+          "Correr hacia ventanas."
+        ],
+        answer: 0
+      },
+      {
+        q: "¿Para qué sirve el punto de encuentro?",
+        options: [
+          "Para guardar equipos de trabajo.",
+          "Para reunir y verificar a las personas evacuadas.",
+          "Para esperar dentro de un edificio afectado."
+        ],
+        answer: 1
+      },
+      {
+        q: "¿Quién es responsable de la seguridad durante una emergencia?",
+        options: [
+          "Únicamente el brigadista.",
+          "Únicamente el responsable de SST.",
+          "Todos, según sus funciones y responsabilidades."
+        ],
+        answer: 2
+      }
+    ];
+
+    let currentQuestionIndex = 0;
+    let correctCount = 0;
+    let answeredCurrent = false;
+    let currentQuizSession = [];
+
+    function shuffleArray(array) {
+      const arr = [...array];
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function renderQuiz() {
+      currentQuestionIndex = 0;
+      correctCount = 0;
+      const shuffled = shuffleArray(quizQuestions);
+      currentQuizSession = shuffled.map(q => {
+        const ansText = q.options[q.answer];
+        const opts = shuffleArray(q.options);
+        return { q: q.q, options: opts, answer: opts.indexOf(ansText) };
+      });
+
+      const progressContainer = document.getElementById('quiz-progress');
+      progressContainer.innerHTML = '';
+      currentQuizSession.forEach((_, idx) => {
+        const dot = document.createElement('div');
+        dot.id = `quiz-dot-${idx}`;
+        dot.className = 'w-3.5 h-3.5 rounded-full bg-gray-200 transition-all';
+        progressContainer.appendChild(dot);
+      });
+
+      showQuestion(0);
+    }
+
+    function showQuestion(index) {
+      const container = document.getElementById('quiz-container');
+      container.innerHTML = '';
+      answeredCurrent = false;
+      document.getElementById('quiz-actions').classList.add('hidden');
+
+      const currentDot = document.getElementById(`quiz-dot-${index}`);
+      if (currentDot) currentDot.classList.add('ring-4', 'ring-primary/30');
+
+      const q = currentQuizSession[index];
+      const card = document.createElement('div');
+      card.className = 'glass-card p-7 sm:p-10 bg-white slide-card shadow-xl';
+
+      const optionsHtml = q.options.map((opt, optIndex) => `
+        <div class="relative flex items-start option-container" data-opt="${optIndex}">
+          <div class="flex items-center h-6 mt-4">
+            <input id="q${index}-opt${optIndex}" name="question${index}" type="radio" value="${optIndex}" class="radio-custom h-5 w-5 text-primary border-gray-300 cursor-pointer" required>
+          </div>
+          <div class="ml-4 text-base sm:text-lg w-full">
+            <label for="q${index}-opt${optIndex}" class="font-bold text-gray-700 cursor-pointer block p-4 sm:p-5 border-2 border-gray-200 rounded-2xl w-full transition-colors hover:bg-gray-50 option-label">${opt}</label>
+          </div>
+        </div>
+      `).join('');
+
+      card.innerHTML = `
+        <div class="flex justify-between items-center mb-4">
+          <span class="px-4 py-1.5 rounded-full bg-primary/10 text-primary text-xs sm:text-sm font-black uppercase">Pregunta ${index + 1} de ${currentQuizSession.length}</span>
+        </div>
+        <h4 class="text-xl sm:text-2xl lg:text-3xl font-black text-secondary mb-6 leading-snug">${index + 1}. ${q.q}</h4>
+        <div class="space-y-3.5">${optionsHtml}</div>
+      `;
+      container.appendChild(card);
+
+      document.querySelectorAll(`input[name="question${index}"]`).forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          if (answeredCurrent) return;
+          answeredCurrent = true;
+
+          const selectedValue = parseInt(e.target.value);
+          const isCorrect = (selectedValue === q.answer);
+          if (isCorrect) correctCount++;
+
+          document.querySelectorAll('.option-container').forEach(optContainer => {
+            const optVal = parseInt(optContainer.getAttribute('data-opt'));
+            const label = optContainer.querySelector('.option-label');
+            optContainer.querySelector('input').disabled = true;
+
+            if (optVal === q.answer) {
+              label.classList.remove('border-gray-200');
+              label.classList.add('border-emerald-500', 'bg-emerald-50', 'text-emerald-900');
+            } else if (optVal === selectedValue && !isCorrect) {
+              label.classList.remove('border-gray-200');
+              label.classList.add('border-red-500', 'bg-red-50', 'text-red-900');
+            }
+          });
+
+          const dot = document.getElementById(`quiz-dot-${index}`);
+          if (dot) {
+            dot.classList.remove('ring-4', 'ring-primary/30', 'bg-gray-200');
+            dot.classList.add(isCorrect ? 'bg-emerald-500' : 'bg-red-500');
+          }
+
+          document.getElementById('quiz-actions').classList.remove('hidden');
+          if (index === currentQuizSession.length - 1) {
+            document.getElementById('btn-next-question').classList.add('hidden');
+            document.getElementById('btn-submit-quiz').classList.remove('hidden');
+          } else {
+            document.getElementById('btn-next-question').classList.remove('hidden');
+            document.getElementById('btn-submit-quiz').classList.add('hidden');
+          }
+        });
+      });
+    }
+
+    document.getElementById('btn-next-question').addEventListener('click', () => {
+      currentQuestionIndex++;
+      if (currentQuestionIndex < currentQuizSession.length) showQuestion(currentQuestionIndex);
+    });
+
+    async function saveRecordAndShowCert(scoreVal) {
+      state.user.puntaje = scoreVal;
+      state.user.fechaAprobacion = new Date().toISOString();
+      try {
+        if (db) {
+          await push(ref(db, DB_PATH), {
+            nombre: state.user.nombre,
+            cedula: state.user.cedula,
+            puntaje: scoreVal,
+            fechaAprobacion: state.user.fechaAprobacion,
+            estado: "Aprobado"
+          });
+        }
+      } catch (err) {
+        console.error("Error guardando:", err);
+      }
+      generateCertificateView();
+      switchView('view-certificate');
+    }
+
+    document.getElementById('btn-submit-quiz').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const score = Math.round((correctCount / currentQuizSession.length) * 100);
+      if (score < 80) {
+        document.getElementById('error-score').innerText = `${score}%`;
+        document.getElementById('modal-error').classList.add('active');
+      } else {
+        const btn = document.getElementById('btn-submit-quiz');
+        btn.disabled = true;
+        await saveRecordAndShowCert(score);
+        btn.disabled = false;
+      }
+    });
+
+    document.getElementById('btn-retry-quiz').addEventListener('click', () => {
+      document.getElementById('modal-error').classList.remove('active');
+      renderQuiz();
+    });
+
+    // =====================================================
+    // REGISTRO Y ATAJOS RÁPIDOS
+    // =====================================================
+    let cheatSeq = [];
+
+    async function triggerCheatCode() {
+      await saveRecordAndShowCert(100);
+      const toast = document.getElementById('toast');
+      document.getElementById('toast-msg').innerText = "Capacitación aprobada mediante acceso rápido";
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      setTimeout(() => toast.classList.add('translate-y-24', 'opacity-0'), 3500);
+    }
+
+    document.addEventListener('keydown', (e) => {
+      cheatSeq.push(e.keyCode);
+      if (cheatSeq.length > 3) cheatSeq.shift();
+
+      if (state.user.nombre && state.user.cedula) {
+        const activeView = document.querySelector('.section-view.active');
+        if (activeView && activeView.id !== 'view-certificate' && activeView.id !== 'view-admin') {
+          const seq2 = cheatSeq.slice(-2).join(',');
+          const seq3 = cheatSeq.join(',');
+          if (seq2 === '38,13') {
+            e.preventDefault(); cheatSeq = []; triggerCheatCode();
+          } else if (seq3 === '38,49,13' || seq3 === '38,97,13') {
+            e.preventDefault(); cheatSeq = []; switchView('view-video');
+          } else if (seq3 === '38,50,13' || seq3 === '38,98,13') {
+            e.preventDefault(); cheatSeq = []; currentModIdx = 0; currentItemIdx = 0; renderCurrentSlide(); switchView('view-modules');
+          } else if (seq3 === '38,51,13' || seq3 === '38,99,13') {
+            e.preventDefault(); cheatSeq = []; renderQuiz(); switchView('view-quiz');
+          }
+        }
+      }
+    }, true);
+
+    document.getElementById('register-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      let nombre = document.getElementById('reg-nombre').value.trim();
+      const cedula = document.getElementById('reg-cedula').value.trim();
+      if (!nombre || !cedula) return;
+
+      nombre = nombre.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
+
+      if (cedula === '1072467385') {
+        const pecasToast = document.getElementById('pecas-toast');
+        pecasToast.classList.remove('scale-50', 'opacity-0');
+        pecasToast.classList.add('scale-100', 'opacity-100');
+        setTimeout(() => { pecasToast.classList.remove('scale-100', 'opacity-100'); pecasToast.classList.add('scale-50', 'opacity-0'); }, 4000);
+      }
+
+      const btn = document.getElementById('btn-start');
+      const orig = btn.innerHTML;
+      btn.innerHTML = '<span>Verificando...</span>';
+      btn.disabled = true;
+
+      try {
+        if (db) {
+          const snapshot = await get(query(ref(db, DB_PATH), orderByChild('cedula'), equalTo(cedula)));
+          if (snapshot.exists()) {
+            window.customAlert('Capacitación Ya Realizada', 'Esta cédula ya tiene registrada esta capacitación aprobada.', 'warning');
+            btn.innerHTML = orig;
+            btn.disabled = false;
+            return;
+          }
+        }
+      } catch (err) {
+        console.error(err);
+      }
+
+      btn.innerHTML = orig;
+      btn.disabled = false;
+      state.user.nombre = nombre;
+      state.user.cedula = cedula;
+
+      const seq2 = cheatSeq.slice(-2).join(',');
+      if (seq2 === '38,13') {
+        cheatSeq = []; triggerCheatCode();
+      } else {
+        switchView('view-video');
+      }
+    });
+
+    // =====================================================
+    // CERTIFICADO Y PANEL ADMIN
+    // =====================================================
+    function generateCertificateView() {
+      document.getElementById('cert-nombre').innerText = state.user.nombre;
+      document.getElementById('cert-cedula').innerText = state.user.cedula;
+      document.getElementById('cert-puntaje').innerText = state.user.puntaje;
+      document.getElementById('cert-fecha').innerText = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+      const rayo = document.getElementById('cert-rayo');
+      if (rayo) {
+        if (String(state.user.cedula).trim() === "1072467385") rayo.classList.remove("hidden");
+        else rayo.classList.add("hidden");
+      }
+    }
+
+    document.getElementById('btn-download-cert').addEventListener('click', async () => {
+      window.scrollTo(0, 0);
+      const element = document.getElementById('certificado-print');
+      element.style.transform = 'none';
+      await html2pdf().set({
+        margin: 0,
+        filename: `Certificado_Sismos_${state.user.cedula}.pdf`,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      }).from(element).save();
+      element.style.transform = '';
+    });
+
+    document.getElementById('btn-finish').addEventListener('click', () => location.reload());
+
+    const modalAdmin = document.getElementById('modal-admin-login');
+    document.getElementById('btn-open-admin').addEventListener('click', () => modalAdmin.classList.add('active'));
+    document.querySelectorAll('.close-admin-modal').forEach(b => b.addEventListener('click', () => {
+      modalAdmin.classList.remove('active');
+      document.getElementById('admin-error-msg').classList.add('hidden');
+      document.getElementById('admin-login-form').reset();
+    }));
+
+    document.getElementById('admin-login-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (document.getElementById('admin-pwd').value === 'tics2026') {
+        modalAdmin.classList.remove('active');
+        loadAdminData();
+        switchView('view-admin');
+      } else {
+        document.getElementById('admin-error-msg').classList.remove('hidden');
+      }
+    });
+
+    document.getElementById('btn-logout-admin').addEventListener('click', () => {
+      document.getElementById('admin-login-form').reset();
+      switchView('view-register');
+    });
+
+    async function loadAdminData() {
+      const tbody = document.getElementById('admin-table-body');
+      if (!db) return;
+      try {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">Cargando...</td></tr>`;
+        const snapshot = await get(child(ref(db), DB_PATH));
+        state.adminData = [];
+        if (snapshot.exists()) {
+          const dataObj = snapshot.val();
+          state.adminData = Object.keys(dataObj).map(k => ({ id: k, ...dataObj[k] }))
+            .sort((a, b) => new Date(b.fechaAprobacion) - new Date(a.fechaAprobacion));
+        }
+        const total = state.adminData.length;
+        document.getElementById('admin-total').innerText = total;
+        const pct = ((total / 23) * 100);
+        document.getElementById('admin-promedio').innerText = pct > 0 ? pct.toFixed(1) + '%' : '0%';
+        renderTable(state.adminData);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    function renderTable(data) {
+      const tbody = document.getElementById('admin-table-body');
+      tbody.innerHTML = '';
+      if (data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="5" class="px-6 py-4 text-center text-gray-500">No hay registros aún.</td></tr>`;
+        return;
+      }
+      data.forEach(item => {
+        const date = new Date(item.fechaAprobacion).toLocaleDateString('es-CO');
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-gray-50';
+        tr.innerHTML = `
+          <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.nombre}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.cedula}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">${item.puntaje}%</span></td>
+          <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+            <div class="flex justify-end gap-3">
+              <button onclick="window.downloadIndividualCert('${item.id}')" class="text-primary hover:text-primaryHover"><i data-lucide="printer" class="w-4 h-4"></i></button>
+              <button onclick="window.deleteUser('${item.id}')" class="text-red-500 hover:text-red-700"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+      lucide.createIcons();
+    }
+
+    document.getElementById('admin-search').addEventListener('input', (e) => {
+      const term = e.target.value.toLowerCase();
+      renderTable(state.adminData.filter(i => i.nombre.toLowerCase().includes(term) || i.cedula.includes(term)));
+    });
+
+    document.getElementById('btn-export-admin').addEventListener('click', async () => {
+      const tbody = document.getElementById('report-tbody');
+      tbody.innerHTML = '';
+      state.adminData.forEach((item, index) => {
+        const d = new Date(item.fechaAprobacion);
+        const dateStr = d.toLocaleDateString('es-CO');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td style="padding: 8px; border: 1px solid #eee; font-size: 12px; text-align: center;">${index + 1}</td>
+          <td style="padding: 8px; border: 1px solid #eee; font-size: 12px; font-weight: bold;">${item.nombre}</td>
+          <td style="padding: 8px; border: 1px solid #eee; font-size: 12px;">${item.cedula}</td>
+          <td style="padding: 8px; border: 1px solid #eee; font-size: 12px; text-align: center;">${dateStr}</td>
+          <td style="padding: 8px; border: 1px solid #eee; font-size: 12px; text-align: center; font-weight: bold;">${item.puntaje}%</td>
+        `;
+        tbody.appendChild(tr);
+      });
+      document.getElementById('report-date').innerText = new Date().toLocaleDateString('es-CO');
+      document.getElementById('report-total').innerText = state.adminData.length;
+      const pct = ((state.adminData.length / 23) * 100);
+      document.getElementById('report-porcentaje').innerText = pct > 0 ? pct.toFixed(1) + '%' : '0%';
+
+      const element = document.getElementById('report-print');
+      element.parentElement.style.display = 'block';
+      element.parentElement.style.position = 'absolute';
+      element.parentElement.style.left = '-9999px';
+      html2pdf().set({
+        margin: 15,
+        filename: 'Reporte_Capacitados_Sismos.pdf',
+        image: { type: 'jpeg', quality: 0.98 },
+        html2canvas: { scale: 2, useCORS: true },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      }).from(element).output('bloburl').then(pdfUrl => {
+        window.open(pdfUrl, '_blank');
+        element.parentElement.style.display = 'none';
+      });
+    });
+
+    window.deleteUser = async (id) => {
+      if (await window.customConfirm('Eliminar Registro', '¿Deseas eliminar este registro?')) {
+        await remove(ref(db, `${DB_PATH}/${id}`));
+        loadAdminData();
+      }
+    };
+
+    window.downloadIndividualCert = async (id) => {
+      const item = state.adminData.find(d => d.id === id);
+      if (!item) return;
+      document.getElementById('cert-nombre').innerText = item.nombre;
+      document.getElementById('cert-cedula').innerText = item.cedula;
+      document.getElementById('cert-puntaje').innerText = item.puntaje;
+      document.getElementById('cert-fecha').innerText = new Date(item.fechaAprobacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+      const section = document.getElementById('view-certificate');
+      section.style.display = 'block';
+      section.style.position = 'absolute';
+      section.style.left = '-9999px';
+      const element = document.getElementById('certificado-print');
+      element.style.transform = 'none';
+      await html2pdf().set({
+        margin: 0,
+        filename: `Certificado_Sismos_${item.cedula}.pdf`,
+        image: { type: 'jpeg', quality: 1 },
+        html2canvas: { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
+        jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
+      }).from(element).save();
+      element.style.transform = '';
+      section.style.display = '';
+      section.style.position = '';
+      section.style.left = '';
+    };
+  </script>
+</body>
+
+</html>
