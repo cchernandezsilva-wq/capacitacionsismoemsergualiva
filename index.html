@@ -1893,40 +1893,10 @@
         return;
       }
 
-      // Caso 4: Tarjetas de lectura estándar
-      let cards = [];
-      if (body.querySelector('.space-y-3')) {
-        cards = Array.from(body.querySelectorAll('.p-4.rounded-2xl'));
-      } else if (body.querySelector(':scope > .grid')) {
-        cards = Array.from(body.querySelectorAll(':scope > .grid > div'));
-      } else {
-        cards = Array.from(body.querySelectorAll(':scope > div'));
-      }
-
-      if (cards.length > 0) {
-        const prog = ensureSubProgress(key, cards.length, 'punto');
-        cards.forEach((card, idx) => {
-          card.classList.add('read-track-card');
-          const pill = document.createElement('div');
-          pill.className = 'read-status-pill';
-          const markRead = () => {
-            prog.readSet.add(idx);
-            card.classList.add('is-read');
-            pill.innerHTML = '✅ Leído';
-            updateReadBanner();
-            updateNextButtonState();
-          };
-          if (prog.readSet.has(idx)) {
-            card.classList.add('is-read');
-            pill.innerHTML = '✅ Leído';
-          } else {
-            pill.innerHTML = '👆 Toca aquí al terminar de leer';
-          }
-          card.appendChild(pill);
-          card.addEventListener('click', markRead);
-        });
-        updateReadBanner();
-      }
+      // Caso 4: Diapositivas informativas normales (sin obligar a tocar cada tarjeta estática)
+      const banner = document.getElementById('read-progress-banner');
+      if (banner) banner.remove();
+      completedItems.add(key);
     }
 
     function renderCurrentSlide() {
