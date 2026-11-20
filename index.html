@@ -264,6 +264,53 @@
       align-items: center;
       gap: 10px;
     }
+
+    /* Tarjetas con confirmación de lectura obligatoria */
+    .read-track-card {
+      position: relative;
+      cursor: pointer;
+      transition: all 0.25s ease;
+      user-select: none;
+    }
+
+    .read-track-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 22px rgba(15, 44, 89, 0.12);
+    }
+
+    .read-track-card.is-read {
+      outline: 3px solid #10b981 !important;
+      outline-offset: 2px;
+    }
+
+    .read-status-pill {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-top: 12px;
+      padding: 5px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 800;
+      background: rgba(15, 44, 89, 0.08);
+      color: #0F2C59;
+      border: 1.5px dashed rgba(15, 44, 89, 0.3);
+      transition: all 0.25s ease;
+      width: 100%;
+    }
+
+    .read-track-card.text-white .read-status-pill {
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.55);
+    }
+
+    .read-track-card.is-read .read-status-pill {
+      background: #10b981 !important;
+      color: #ffffff !important;
+      border: 1.5px solid #059669 !important;
+    }
   </style>
 </head>
 
@@ -1524,37 +1571,117 @@
       ]
     };
 
+    // =====================================================
+    // CONTROL DE LECTURA OBLIGATORIA POR CADA ÍTEM Y SUB-TARJETA
+    // =====================================================
+    const completedRetos = new Set();
+    const completedItems = new Set();
+    const itemSubProgress = {}; // key: "m-i" -> { readSet: Set, total: number, unit: string }
+    let reto1Count = 0;
+    let reto2Step = 0;
+    let reto3Count = 0;
+
+    function getItemKey(mIdx = currentModIdx, iIdx = currentItemIdx) {
+      return `${mIdx}-${iIdx}`;
+    }
+
+    function ensureSubProgress(key, total, unit) {
+      if (!itemSubProgress[key]) {
+        itemSubProgress[key] = { readSet: new Set(), total, unit };
+      } else {
+        itemSubProgress[key].total = total;
+        itemSubProgress[key].unit = unit;
+      }
+      return itemSubProgress[key];
+    }
+
+    function isItemCompleted(mIdx = currentModIdx, iIdx = currentItemIdx) {
+      const key = getItemKey(mIdx, iIdx);
+      if (completedItems.has(key)) return true;
+      const item = modulesData[mIdx]?.items?.[iIdx];
+      if (!item) return false;
+      if (item.title.includes('Reto 1')) return completedRetos.has(1);
+      if (item.title.includes('Reto 2')) return completedRetos.has(2);
+      if (item.title.includes('Reto 3')) return completedRetos.has(3);
+      const prog = itemSubProgress[key];
+      if (prog && prog.total > 0 && prog.readSet.size >= prog.total) {
+        completedItems.add(key);
+        return true;
+      }
+      return false;
+    }
+
+    function updateReadBanner() {
+      const banner = document.getElementById('read-progress-banner');
+      if (!banner) return;
+      const key = getItemKey();
+      const prog = itemSubProgress[key];
+      if (!prog) return;
+      const done = prog.readSet.size;
+      const total = prog.total;
+      if (done >= total) {
+        completedItems.add(key);
+        banner.className = 'flex flex-wrap items-center justify-between gap-2 bg-emerald-50 border-2 border-emerald-400 px-4 py-3 rounded-2xl mb-4 transition-all';
+        banner.innerHTML = `
+          <span class="text-sm sm:text-base font-black text-emerald-900">✅ ¡Lectura completada! Ya revisaste todos los puntos de este ítem.</span>
+          <span class="px-3.5 py-1 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-black">${done} / ${total} leídos</span>
+        `;
+      } else {
+        banner.className = 'flex flex-wrap items-center justify-between gap-2 bg-amber-50 border-2 border-amber-300 px-4 py-3 rounded-2xl mb-4 transition-all';
+        banner.innerHTML = `
+          <span class="text-sm sm:text-base font-bold text-amber-900">📖 Lectura obligatoria: Toca y revisa cada ${prog.unit} para habilitar "Siguiente"</span>
+          <span class="px-3.5 py-1 rounded-xl bg-amber-500 text-white text-xs sm:text-sm font-black">${done} / ${total} leídos</span>
+        `;
+      }
+    }
+
     window.pickMiniScenario = function (key) {
+      const itemKey = getItemKey();
+      const prog = ensureSubProgress(itemKey, Object.keys(miniScenarios).length, 'escenario');
+      prog.readSet.add(key);
+
       document.querySelectorAll('.mscen-btn').forEach(b => {
-        b.className = 'mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary hover:bg-slate-200 transition-all';
+        const bKey = b.id.replace('mscen-', '');
+        const isRead = prog.readSet.has(bKey);
+        if (!b.dataset.baseLabel) b.dataset.baseLabel = b.innerHTML;
+        b.innerHTML = isRead ? `${b.dataset.baseLabel} <span class="ml-1">✅</span>` : b.dataset.baseLabel;
+        b.className = isRead
+          ? 'mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-emerald-50 text-emerald-900 border-2 border-emerald-400 hover:bg-emerald-100 transition-all'
+          : 'mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary border-2 border-transparent hover:bg-slate-200 transition-all';
       });
       const active = document.getElementById(`mscen-${key}`);
-      if (active) active.className = 'mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-primary text-white shadow-md transition-all';
+      if (active) active.className = 'mscen-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-primary text-white border-2 border-primary shadow-md transition-all';
       const box = document.getElementById('mini-scenario-box');
       if (box && miniScenarios[key]) {
         box.innerHTML = miniScenarios[key].map(line => `<div class="p-4 bg-white rounded-2xl border border-slate-200 text-sm sm:text-lg">${line}</div>`).join('');
       }
+      updateReadBanner();
+      updateNextButtonState();
     };
 
     window.pickMiniRole = function (key) {
+      const itemKey = getItemKey();
+      const prog = ensureSubProgress(itemKey, Object.keys(miniRoles).length, 'área');
+      prog.readSet.add(key);
+
       document.querySelectorAll('.mrole-btn').forEach(b => {
-        b.className = 'mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary hover:bg-slate-200 transition-all';
+        const bKey = b.id.replace('mrole-', '');
+        const isRead = prog.readSet.has(bKey);
+        if (!b.dataset.baseLabel) b.dataset.baseLabel = b.innerHTML;
+        b.innerHTML = isRead ? `${b.dataset.baseLabel} <span class="ml-1">✅</span>` : b.dataset.baseLabel;
+        b.className = isRead
+          ? 'mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-emerald-50 text-emerald-900 border-2 border-emerald-400 hover:bg-emerald-100 transition-all'
+          : 'mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-slate-100 text-secondary border-2 border-transparent hover:bg-slate-200 transition-all';
       });
       const active = document.getElementById(`mrole-${key}`);
-      if (active) active.className = 'mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-primary text-white shadow-md transition-all';
+      if (active) active.className = 'mrole-btn px-4 py-3 rounded-2xl text-sm sm:text-base font-black bg-primary text-white border-2 border-primary shadow-md transition-all';
       const box = document.getElementById('mini-role-box');
       if (box && miniRoles[key]) {
         box.innerHTML = miniRoles[key].map(line => `<div class="p-4 bg-white rounded-2xl border border-blue-200 text-sm sm:text-lg">${line}</div>`).join('');
       }
+      updateReadBanner();
+      updateNextButtonState();
     };
-
-    // =====================================================
-    // LÓGICA DE LOS 3 RETOS INTERACTIVOS (OBLIGATORIOS PARA AVANZAR, NO CALIFICABLES)
-    // =====================================================
-    const completedRetos = new Set();
-    let reto1Count = 0;
-    let reto2Step = 0;
-    let reto3Count = 0;
 
     function showLockToast(msg) {
       const toast = document.getElementById('toast');
@@ -1599,6 +1726,15 @@
         return;
       }
 
+      if (!isItemCompleted(currentModIdx, currentItemIdx)) {
+        const prog = itemSubProgress[getItemKey()] || { readSet: new Set(), total: 1 };
+        nextBtn.disabled = true;
+        nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
+        nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Lee cada ítem (${prog.readSet.size}/${prog.total}) para continuar</span>`;
+        lucide.createIcons();
+        return;
+      }
+
       // Desbloqueado
       nextBtn.disabled = false;
       if (isLastItem && isLastMod) {
@@ -1631,6 +1767,7 @@
         if (scoreEl) scoreEl.innerText = `${reto1Count} / 4 asegurados`;
         if (reto1Count >= 4) {
           completedRetos.add(1);
+          completedItems.add(getItemKey());
           if (msgEl) msgEl.innerHTML = '🏆 <strong>¡Reto 1 Superado!</strong> Aseguraste los 4 peligros. Ya puedes continuar.';
           if (scoreEl) scoreEl.className = 'px-3.5 py-1 rounded-xl bg-emerald-600 text-white text-xs sm:text-sm font-black';
         } else if (msgEl) {
@@ -1656,6 +1793,7 @@
         if (reto2Step === 2 && msgEl) msgEl.innerHTML = '✅ <strong>¡Paso 2: CÚBRETE!</strong> Ahora toca el Paso #3.';
         if (reto2Step === 3) {
           completedRetos.add(2);
+          completedItems.add(getItemKey());
           if (msgEl) msgEl.innerHTML = '🏆 <strong>¡Reto 2 Superado!</strong> 1. Agáchate → 2. Cúbrete → 3. Sujétate. Ya puedes continuar.';
         }
         updateNextButtonState();
@@ -1668,6 +1806,7 @@
     window.resetReto2 = function () {
       reto2Step = 0;
       completedRetos.delete(2);
+      completedItems.delete(getItemKey());
       [1, 2, 3].forEach(n => {
         const b = document.getElementById(`r2-btn-${n}`);
         if (b) b.className = 'p-6 rounded-3xl border-2 border-slate-200 bg-white hover:border-primary text-center transition-all shadow-sm';
@@ -1694,6 +1833,7 @@
         if (scoreEl) scoreEl.innerText = `${reto3Count} / 4 en el Kit`;
         if (reto3Count >= 4) {
           completedRetos.add(3);
+          completedItems.add(getItemKey());
           if (msgEl) msgEl.innerHTML = '🏆 <strong>¡Reto 3 Superado!</strong> Tu Kit de Emergencia quedó completo. Ya puedes continuar.';
         } else if (msgEl) {
           msgEl.innerHTML = '✅ ' + msg;
@@ -1712,9 +1852,87 @@
     let currentModIdx = 0;
     let currentItemIdx = 0;
 
+    function setupItemReadTracking() {
+      const mod = modulesData[currentModIdx];
+      const item = mod.items[currentItemIdx];
+      if (item.title.includes('Reto 1') || item.title.includes('Reto 2') || item.title.includes('Reto 3')) return;
+
+      const key = getItemKey();
+      const body = document.getElementById('slide-item-body');
+      if (!body) return;
+
+      // Caso 1: Escenarios (5 pestañas)
+      if (document.getElementById('mini-scenario-box')) {
+        window.pickMiniScenario('oficina');
+        return;
+      }
+
+      // Caso 2: Roles por Área (5 pestañas)
+      if (document.getElementById('mini-role-box')) {
+        window.pickMiniRole('admin');
+        return;
+      }
+
+      // Caso 3: Tarjetas Giratorias (Mito o Realidad)
+      const flipBoxes = body.querySelectorAll('.flip-box');
+      if (flipBoxes.length > 0) {
+        const prog = ensureSubProgress(key, flipBoxes.length, 'tarjeta');
+        flipBoxes.forEach((fb, idx) => {
+          fb.removeAttribute('onclick');
+          if (prog.readSet.has(idx)) {
+            fb.classList.add('flipped');
+          }
+          fb.addEventListener('click', () => {
+            fb.classList.toggle('flipped');
+            prog.readSet.add(idx);
+            updateReadBanner();
+            updateNextButtonState();
+          });
+        });
+        updateReadBanner();
+        return;
+      }
+
+      // Caso 4: Tarjetas de lectura estándar
+      let cards = [];
+      if (body.querySelector('.space-y-3')) {
+        cards = Array.from(body.querySelectorAll('.p-4.rounded-2xl'));
+      } else if (body.querySelector(':scope > .grid')) {
+        cards = Array.from(body.querySelectorAll(':scope > .grid > div'));
+      } else {
+        cards = Array.from(body.querySelectorAll(':scope > div'));
+      }
+
+      if (cards.length > 0) {
+        const prog = ensureSubProgress(key, cards.length, 'punto');
+        cards.forEach((card, idx) => {
+          card.classList.add('read-track-card');
+          const pill = document.createElement('div');
+          pill.className = 'read-status-pill';
+          const markRead = () => {
+            prog.readSet.add(idx);
+            card.classList.add('is-read');
+            pill.innerHTML = '✅ Leído';
+            updateReadBanner();
+            updateNextButtonState();
+          };
+          if (prog.readSet.has(idx)) {
+            card.classList.add('is-read');
+            pill.innerHTML = '✅ Leído';
+          } else {
+            pill.innerHTML = '👆 Toca aquí al terminar de leer';
+          }
+          card.appendChild(pill);
+          card.addEventListener('click', markRead);
+        });
+        updateReadBanner();
+      }
+    }
+
     function renderCurrentSlide() {
       const mod = modulesData[currentModIdx];
       const item = mod.items[currentItemIdx];
+      const isReto = item.title.includes('Reto 1') || item.title.includes('Reto 2') || item.title.includes('Reto 3');
 
       // Update top 3 module pills
       modulesData.forEach((_, mIdx) => {
@@ -1740,12 +1958,9 @@
         dot.type = 'button';
         dot.onclick = () => {
           if (idx > currentItemIdx) {
-            for (let k = currentItemIdx; k < idx; k++) {
-              const stepItem = mod.items[k];
-              if ((stepItem.title.includes('Reto 1') && !completedRetos.has(1)) ||
-                  (stepItem.title.includes('Reto 2') && !completedRetos.has(2)) ||
-                  (stepItem.title.includes('Reto 3') && !completedRetos.has(3))) {
-                showLockToast('🔒 Debes completar el reto del módulo para poder avanzar.');
+            for (let k = 0; k < idx; k++) {
+              if (!isItemCompleted(currentModIdx, k)) {
+                showLockToast('🔒 Debes leer y completar cada ítem en orden antes de avanzar.');
                 return;
               }
             }
@@ -1755,7 +1970,7 @@
         };
         dot.className = idx === currentItemIdx
           ? 'w-8 h-3 rounded-full bg-primary transition-all'
-          : (idx < currentItemIdx ? 'w-3 h-3 rounded-full bg-accent transition-all' : 'w-3 h-3 rounded-full bg-gray-200 transition-all');
+          : (isItemCompleted(currentModIdx, idx) ? 'w-3 h-3 rounded-full bg-accent transition-all' : 'w-3 h-3 rounded-full bg-gray-200 transition-all');
         dotsContainer.appendChild(dot);
       });
 
@@ -1768,34 +1983,35 @@
             <span class="text-xs sm:text-sm font-bold text-gray-400">${mod.title}</span>
           </div>
           <h3 class="text-2xl sm:text-3xl lg:text-4xl font-black text-secondary mb-2">${item.title}</h3>
-          <p class="text-base sm:text-lg text-gray-500 font-medium mb-5">${item.subtitle}</p>
-          ${item.html}
+          <p class="text-base sm:text-lg text-gray-500 font-medium mb-4">${item.subtitle}</p>
+          ${!isReto ? '<div id="read-progress-banner"></div>' : ''}
+          <div id="slide-item-body">${item.html}</div>
         </div>
         <div class="pt-4 border-t border-gray-100 flex items-center justify-between text-xs sm:text-sm font-bold text-gray-400">
           <span>Paso ${currentItemIdx + 1} de ${mod.items.length}</span>
-          <span>${item.title.includes('Reto') ? '🔒 Reto obligatorio para avanzar' : 'Presiona "Siguiente" para avanzar'}</span>
+          <span>🔒 Debes leer y completar todo el contenido para avanzar</span>
         </div>
       `;
 
       // Reset current reto counters if not yet completed
-      if (item.title.includes('Reto 1')) { reto1Count = 0; completedRetos.delete(1); }
-      if (item.title.includes('Reto 2')) { reto2Step = 0; completedRetos.delete(2); }
-      if (item.title.includes('Reto 3')) { reto3Count = 0; completedRetos.delete(3); }
+      if (item.title.includes('Reto 1')) { reto1Count = 0; completedRetos.delete(1); completedItems.delete(getItemKey()); }
+      if (item.title.includes('Reto 2')) { reto2Step = 0; completedRetos.delete(2); completedItems.delete(getItemKey()); }
+      if (item.title.includes('Reto 3')) { reto3Count = 0; completedRetos.delete(3); completedItems.delete(getItemKey()); }
 
-      if (document.getElementById('mini-scenario-box')) window.pickMiniScenario('oficina');
-      if (document.getElementById('mini-role-box')) window.pickMiniRole('admin');
-
+      setupItemReadTracking();
       updateNextButtonState();
     }
 
     window.jumpToModule = function (mIdx) {
-      if (mIdx >= 1 && !completedRetos.has(1)) {
-        showLockToast('🔒 Debes completar el Reto 1 del Módulo 1 antes de pasar al Módulo 2.');
-        return;
-      }
-      if (mIdx >= 2 && !completedRetos.has(2)) {
-        showLockToast('🔒 Debes completar el Reto 2 del Módulo 2 antes de pasar al Módulo 3.');
-        return;
+      if (mIdx > currentModIdx) {
+        for (let m = 0; m < mIdx; m++) {
+          for (let i = 0; i < modulesData[m].items.length; i++) {
+            if (!isItemCompleted(m, i)) {
+              showLockToast(`🔒 Debes leer y completar todos los ítems del Módulo ${m + 1} antes de avanzar.`);
+              return;
+            }
+          }
+        }
       }
       currentModIdx = mIdx;
       currentItemIdx = 0;
@@ -1803,6 +2019,10 @@
     };
 
     document.getElementById('btn-item-next').addEventListener('click', () => {
+      if (!isItemCompleted(currentModIdx, currentItemIdx)) {
+        showLockToast('🔒 Debes leer y tocar todos los puntos de este ítem para poder continuar.');
+        return;
+      }
       const mod = modulesData[currentModIdx];
       if (currentItemIdx < mod.items.length - 1) {
         currentItemIdx++;
