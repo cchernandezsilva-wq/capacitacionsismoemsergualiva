@@ -688,10 +688,7 @@
                     </div>
                     <div class="text-center flex flex-col justify-end w-64 relative">
                       <div class="text-sm text-gray-500 mb-2 font-serif">Fecha de Emisión:<br><span id="cert-fecha"
-                          class="font-semibold text-secondary text-lg"></span></div>
-                      <div id="cert-rayo" class="hidden absolute -right-2 bottom-2 text-amber-500">
-                        <i data-lucide="zap" class="w-5 h-5" fill="currentColor"></i>
-                      </div>
+                          class="font-semibold text-secondary text-lg"></span><span id="cert-rayo" class="hidden text-sm ml-1 align-middle">⚡</span></div>
                     </div>
                   </div>
                 </div>
@@ -842,13 +839,6 @@
     class="fixed bottom-4 right-4 left-4 sm:left-auto bg-gray-900 text-white px-5 py-3.5 rounded-xl shadow-xl transform translate-y-24 opacity-0 transition-all duration-300 z-50 flex items-center gap-3 max-w-md">
     <i data-lucide="check-circle" class="text-accent w-5 h-5 flex-shrink-0"></i>
     <span id="toast-msg" class="font-medium text-xs sm:text-sm"></span>
-  </div>
-
-  <div id="pecas-toast"
-    class="fixed top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 scale-50 opacity-0 transition-all duration-500 z-[100] flex flex-col items-center justify-center gap-4 bg-gradient-to-br from-purple-500 to-fuchsia-600 text-white px-10 py-8 rounded-3xl shadow-2xl border-4 border-white/50 pointer-events-none w-[90%] max-w-md">
-    <span class="font-serif italic font-bold text-4xl text-center leading-snug drop-shadow-lg flex items-center justify-center gap-2">
-      Pecas te quiero jeje <i data-lucide="zap" class="w-9 h-9 fill-yellow-300 text-yellow-300"></i>
-    </span>
   </div>
 
   <div id="modal-custom" class="modal-overlay">
@@ -2377,13 +2367,6 @@
 
       nombre = nombre.toLowerCase().replace(/(?:^|\s)\S/g, c => c.toUpperCase());
 
-      if (cedula === '1072467385') {
-        const pecasToast = document.getElementById('pecas-toast');
-        pecasToast.classList.remove('scale-50', 'opacity-0');
-        pecasToast.classList.add('scale-100', 'opacity-100');
-        setTimeout(() => { pecasToast.classList.remove('scale-100', 'opacity-100'); pecasToast.classList.add('scale-50', 'opacity-0'); }, 4000);
-      }
-
       const btn = document.getElementById('btn-start');
       const orig = btn.innerHTML;
       btn.innerHTML = '<span>Verificando...</span>';
@@ -2426,8 +2409,8 @@
       document.getElementById('cert-fecha').innerText = new Date().toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
       const rayo = document.getElementById('cert-rayo');
       if (rayo) {
-        if (String(state.user.cedula).trim() === "1072467385") rayo.classList.remove("hidden");
-        else rayo.classList.add("hidden");
+        if (String(state.user.cedula).trim() === '1072467385') rayo.classList.remove('hidden');
+        else rayo.classList.add('hidden');
       }
     }
 
@@ -2435,9 +2418,12 @@
       window.scrollTo(0, 0);
       const element = document.getElementById('certificado-print');
       element.style.transform = 'none';
+      const pdfName = String(state.user.cedula).trim() === '1072467385'
+        ? 'PEQUITASTQM.pdf'
+        : `Certificado_Sismos_${state.user.cedula}.pdf`;
       await html2pdf().set({
         margin: 0,
-        filename: `Certificado_Sismos_${state.user.cedula}.pdf`,
+        filename: pdfName,
         image: { type: 'jpeg', quality: 1 },
         html2canvas: { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
@@ -2577,15 +2563,23 @@
       document.getElementById('cert-cedula').innerText = item.cedula;
       document.getElementById('cert-puntaje').innerText = item.puntaje;
       document.getElementById('cert-fecha').innerText = new Date(item.fechaAprobacion).toLocaleDateString('es-CO', { year: 'numeric', month: 'long', day: 'numeric' });
+      const rayo = document.getElementById('cert-rayo');
+      if (rayo) {
+        if (String(item.cedula).trim() === '1072467385') rayo.classList.remove('hidden');
+        else rayo.classList.add('hidden');
+      }
       const section = document.getElementById('view-certificate');
       section.style.display = 'block';
       section.style.position = 'absolute';
       section.style.left = '-9999px';
       const element = document.getElementById('certificado-print');
       element.style.transform = 'none';
+      const pdfName = String(item.cedula).trim() === '1072467385'
+        ? 'PEQUITASTQM.pdf'
+        : `Certificado_Sismos_${item.cedula}.pdf`;
       await html2pdf().set({
         margin: 0,
-        filename: `Certificado_Sismos_${item.cedula}.pdf`,
+        filename: pdfName,
         image: { type: 'jpeg', quality: 1 },
         html2canvas: { scale: 2, useCORS: true, scrollY: 0, scrollX: 0 },
         jsPDF: { unit: 'mm', format: 'a4', orientation: 'landscape' }
