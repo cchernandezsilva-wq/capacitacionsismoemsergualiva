@@ -2285,9 +2285,108 @@
       if (currentQuestionIndex < currentQuizSession.length) showQuestion(currentQuestionIndex);
     });
 
+    const DEVICE_LOCK_KEY = 'emser_sismo_device_cedula';
+
+    function setDeviceLockCedula(cedulaVal) {
+      try { localStorage.setItem(DEVICE_LOCK_KEY, cedulaVal); } catch (e) {}
+      try { document.cookie = `${DEVICE_LOCK_KEY}=${encodeURIComponent(cedulaVal)}; path=/; max-age=31536000; SameSite=Lax`; } catch (e) {}
+    }
+
+    function getDeviceLockCedula() {
+      try {
+        const ls = localStorage.getItem(DEVICE_LOCK_KEY);
+        if (ls) return ls;
+      } catch (e) {}
+      try {
+        const match = document.cookie.match(new RegExp('(?:^|; )' + DEVICE_LOCK_KEY + '=([^;]*)'));
+        if (match) return decodeURIComponent(match[1]);
+      } catch (e) {}
+      return null;
+    }
+
+    function clearDeviceLockCedula() {
+      try { localStorage.removeItem(DEVICE_LOCK_KEY); } catch (e) {}
+      try { document.cookie = `${DEVICE_LOCK_KEY}=; path=/; max-age=0`; } catch (e) {}
+    }
+
+    function hashString(str) {
+      let h1 = 0xdeadbeef ^ str.length;
+      let h2 = 0x41c6ce57 ^ str.length;
+      for (let i = 0, ch; i < str.length; i++) {
+        ch = str.charCodeAt(i);
+        h1 = Math.imul(h1 ^ ch, 2654435761);
+        h2 = Math.imul(h2 ^ ch, 1597334677);
+      }
+      h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+      h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+      return ((h2 >>> 0).toString(16).padStart(8, '0') + (h1 >>> 0).toString(16).padStart(8, '0')).toUpperCase().slice(0, 10);
+    }
+
+    function getHardwareSignature() {
+      let gpu = '';
+      try {
+        const canvas = document.createElement('canvas');
+        const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+        if (gl) {
+          const dbg = gl.getExtension('WEBGL_debug_renderer_info');
+          if (dbg) {
+            gpu = (gl.getParameter(dbg.UNMASKED_VENDOR_WEBGL) || '') + '~' + (gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) || '');
+          }
+        }
+      } catch (e) {}
+      const parts = [
+        navigator.platform || '',
+        `${screen.width}x${screen.height}x${screen.colorDepth}`,
+        navigator.hardwareConcurrency || '',
+        navigator.deviceMemory || '',
+        navigator.maxTouchPoints || 0,
+        Intl.DateTimeFormat().resolvedOptions().timeZone || '',
+        gpu
+      ];
+      return parts.join('|');
+    }
+
+    async function fetchPublicIp() {
+      try {
+        const ctrl = new AbortController();
+        const t = setTimeout(() => ctrl.abort(), 2500);
+        const res = await fetch('/cdn-cgi/trace', { signal: ctrl.signal, cache: 'no-store' });
+        clearTimeout(t);
+        if (res.ok) {
+          const txt = await res.text();
+          const m = txt.match(/^ip=(.+)$/m);
+          if (m && m[1]) return m[1].trim();
+        }
+      } catch (e) {}
+      try {
+        const ctrl2 = new AbortController();
+        const t2 = setTimeout(() => ctrl2.abort(), 2500);
+        const res2 = await fetch('https://api.ipify.org?format=json', { signal: ctrl2.signal, cache: 'no-store' });
+        clearTimeout(t2);
+        if (res2.ok) {
+          const data = await res2.json();
+          if (data && data.ip) return String(data.ip).trim();
+        }
+      } catch (e) {}
+      return 'IP-LOCAL';
+    }
+
+    async function getClientDeviceIdentity() {
+      const ip = await fetchPublicIp();
+      const hwSig = getHardwareSignature();
+      const equipoId = 'EQ-' + hashString(`${ip}|${hwSig}`);
+      return { ip, equipoId };
+    }
+
     async function saveRecordAndShowCert(scoreVal) {
       state.user.puntaje = scoreVal;
       state.user.fechaAprobacion = new Date().toISOString();
+      if (!state.user.ip || !state.user.equipoId) {
+        const identity = await getClientDeviceIdentity();
+        state.user.ip = identity.ip;
+        state.user.equipoId = identity.equipoId;
+      }
+      setDeviceLockCedula(state.user.cedula);
       try {
         if (db) {
           await push(ref(db, DB_PATH), {
@@ -2295,7 +2394,9 @@
             cedula: state.user.cedula,
             puntaje: scoreVal,
             fechaAprobacion: state.user.fechaAprobacion,
-            estado: "Aprobado"
+            estado: "Aprobado",
+            ip: state.user.ip,
+            equipoId: state.user.equipoId
           });
         }
       } catch (err) {
@@ -2369,14 +2470,55 @@
 
       const btn = document.getElementById('btn-start');
       const orig = btn.innerHTML;
-      btn.innerHTML = '<span>Verificando...</span>';
+      btn.innerHTML = '<span>Verificando equipo y cédula...</span>';
       btn.disabled = true;
+
+      const identity = await getClientDeviceIdentity();
+      state.user.ip = identity.ip;
+      state.user.equipoId = identity.equipoId;
 
       try {
         if (db) {
-          const snapshot = await get(query(ref(db, DB_PATH), orderByChild('cedula'), equalTo(cedula)));
-          if (snapshot.exists()) {
+          const allSnap = await get(child(ref(db), DB_PATH));
+          const records = [];
+          if (allSnap.exists()) {
+            const val = allSnap.val();
+            Object.keys(val).forEach(k => records.push(val[k]));
+          }
+
+          // 1. Verificar si la cédula ya aprobó la capacitación
+          const existingCedula = records.find(r => String(r.cedula).trim() === cedula);
+          if (existingCedula) {
             window.customAlert('Capacitación Ya Realizada', 'Esta cédula ya tiene registrada esta capacitación aprobada.', 'warning');
+            btn.innerHTML = orig;
+            btn.disabled = false;
+            return;
+          }
+
+          // 2. Verificar si este navegador o este mismo PC (Huella de hardware + IP) ya registró a otro trabajador activo
+          const lockedCedula = getDeviceLockCedula();
+          let existingDeviceRecord = null;
+
+          if (lockedCedula) {
+            const foundInDb = records.find(r => String(r.cedula).trim() === String(lockedCedula).trim());
+            if (foundInDb) {
+              existingDeviceRecord = foundInDb;
+            } else {
+              // Si el administrador eliminó el registro en el panel, se libera el bloqueo local
+              clearDeviceLockCedula();
+            }
+          }
+
+          if (!existingDeviceRecord && identity.equipoId) {
+            existingDeviceRecord = records.find(r => r.equipoId && r.equipoId === identity.equipoId);
+          }
+
+          if (existingDeviceRecord) {
+            window.customAlert(
+              'Equipo Ya Utilizado',
+              `Desde este mismo equipo/dispositivo (IP: ${identity.ip}) ya se realizó la capacitación a nombre de ${existingDeviceRecord.nombre}. Cada trabajador debe realizar la capacitación desde su propio equipo o celular.`,
+              'warning'
+            );
             btn.innerHTML = orig;
             btn.disabled = false;
             return;
@@ -2492,7 +2634,10 @@
         tr.className = 'hover:bg-gray-50';
         tr.innerHTML = `
           <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${item.nombre}</td>
-          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${item.cedula}</td>
+          <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <div>${item.cedula}</div>
+            ${item.ip ? `<div class="text-[11px] text-gray-400">IP: ${item.ip} • ${item.equipoId || ''}</div>` : ''}
+          </td>
           <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${date}</td>
           <td class="px-6 py-4 whitespace-nowrap text-sm"><span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">${item.puntaje}%</span></td>
           <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
