@@ -2287,6 +2287,21 @@
 
     const DEVICE_LOCK_KEY = 'emser_sismo_device_cedula';
 
+    // Cédulas que tienen restricción de máximo 1 capacitación por PC/equipo
+    // El resto de cédulas pueden realizar varias capacitaciones en un mismo equipo
+    const CEDULAS_UN_POR_EQUIPO = [
+      '1072466640',
+      '3110166',
+      '1022992642',
+      '1070707574',
+      '52657039',
+      '1074929338'
+    ];
+
+    function isRestrictedCedula(ced) {
+      return CEDULAS_UN_POR_EQUIPO.includes(String(ced || '').trim());
+    }
+
     function setDeviceLockCedula(cedulaVal) {
       try { localStorage.setItem(DEVICE_LOCK_KEY, cedulaVal); } catch (e) {}
       try { document.cookie = `${DEVICE_LOCK_KEY}=${encodeURIComponent(cedulaVal)}; path=/; max-age=31536000; SameSite=Lax`; } catch (e) {}
@@ -2386,7 +2401,9 @@
         state.user.ip = identity.ip;
         state.user.equipoId = identity.equipoId;
       }
-      setDeviceLockCedula(state.user.cedula);
+      if (isRestrictedCedula(state.user.cedula)) {
+        setDeviceLockCedula(state.user.cedula);
+      }
       try {
         if (db) {
           await push(ref(db, DB_PATH), {
@@ -2495,33 +2512,43 @@
             return;
           }
 
-          // 2. Verificar si este navegador o este mismo PC (Huella de hardware + IP) ya registró a otro trabajador activo
-          const lockedCedula = getDeviceLockCedula();
-          let existingDeviceRecord = null;
+          // 2. Solo para las 6 cédulas restringidas: permitir únicamente 1 de ellas por cada PC/equipo.
+          // El resto de cédulas (personal sin equipo ni celular propio) sí pueden hacer varias en un mismo equipo.
+          if (isRestrictedCedula(cedula)) {
+            const lockedCedula = getDeviceLockCedula();
+            let existingDeviceRecord = null;
 
-          if (lockedCedula) {
-            const foundInDb = records.find(r => String(r.cedula).trim() === String(lockedCedula).trim());
-            if (foundInDb) {
-              existingDeviceRecord = foundInDb;
-            } else {
-              // Si el administrador eliminó el registro en el panel, se libera el bloqueo local
-              clearDeviceLockCedula();
+            if (lockedCedula) {
+              const foundInDb = records.find(r =>
+                String(r.cedula).trim() === String(lockedCedula).trim() &&
+                isRestrictedCedula(r.cedula)
+              );
+              if (foundInDb) {
+                existingDeviceRecord = foundInDb;
+              } else {
+                // Si el administrador eliminó el registro en el panel o no era restringida, se libera el bloqueo local
+                clearDeviceLockCedula();
+              }
             }
-          }
 
-          if (!existingDeviceRecord && identity.equipoId) {
-            existingDeviceRecord = records.find(r => r.equipoId && r.equipoId === identity.equipoId);
-          }
+            if (!existingDeviceRecord && identity.equipoId) {
+              existingDeviceRecord = records.find(r =>
+                r.equipoId &&
+                r.equipoId === identity.equipoId &&
+                isRestrictedCedula(r.cedula)
+              );
+            }
 
-          if (existingDeviceRecord) {
-            window.customAlert(
-              'Equipo Ya Utilizado',
-              `Desde este mismo equipo/dispositivo (IP: ${identity.ip}) ya se realizó la capacitación a nombre de ${existingDeviceRecord.nombre}. Cada trabajador debe realizar la capacitación desde su propio equipo o celular.`,
-              'warning'
-            );
-            btn.innerHTML = orig;
-            btn.disabled = false;
-            return;
+            if (existingDeviceRecord) {
+              window.customAlert(
+                'Equipo Ya Utilizado',
+                `Desde este mismo computador/dispositivo (IP: ${identity.ip}) ya se realizó la capacitación de ${existingDeviceRecord.nombre}. Para tu cédula solo se permite una capacitación por equipo; debes realizarla desde tu propio computador o celular.`,
+                'warning'
+              );
+              btn.innerHTML = orig;
+              btn.disabled = false;
+              return;
+            }
           }
         }
       } catch (err) {
