@@ -483,7 +483,7 @@
     <section id="view-video" class="section-view py-8 sm:py-12">
       <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="text-center mb-6">
+        <div id="video-secret-header" class="text-center mb-6 select-none">
           <span class="inline-block px-4 py-1.5 bg-orange-100 text-orange-700 rounded-full text-xs sm:text-sm font-extrabold uppercase mb-2">
             Paso 1 • Video Instructivo
           </span>
@@ -600,7 +600,7 @@
     <section id="view-quiz" class="section-view py-8 sm:py-12">
       <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
 
-        <div class="text-center mb-7">
+        <div id="quiz-secret-header" class="text-center mb-7 select-none">
           <span class="inline-block px-4 py-1.5 bg-orange-100 text-orange-800 rounded-full text-xs sm:text-sm font-extrabold uppercase mb-2">
             Evaluación Final • Aprueba con 8 de 10 (80%)
           </span>
@@ -1570,6 +1570,7 @@
     let reto1Count = 0;
     let reto2Step = 0;
     let reto3Count = 0;
+    let freeNavUnlocked = false;
 
     function getItemKey(mIdx = currentModIdx, iIdx = currentItemIdx) {
       return `${mIdx}-${iIdx}`;
@@ -1586,6 +1587,7 @@
     }
 
     function isItemCompleted(mIdx = currentModIdx, iIdx = currentItemIdx) {
+      if (freeNavUnlocked) return true;
       const key = getItemKey(mIdx, iIdx);
       if (completedItems.has(key)) return true;
       const item = modulesData[mIdx]?.items?.[iIdx];
@@ -1694,35 +1696,37 @@
       const isReto2 = item.title.includes('Reto 2');
       const isReto3 = item.title.includes('Reto 3');
 
-      if (isReto1 && !completedRetos.has(1)) {
-        nextBtn.disabled = true;
-        nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
-        nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 1 (${reto1Count}/4) para continuar</span>`;
-        lucide.createIcons();
-        return;
-      }
-      if (isReto2 && !completedRetos.has(2)) {
-        nextBtn.disabled = true;
-        nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
-        nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 2 (${reto2Step}/3) para continuar</span>`;
-        lucide.createIcons();
-        return;
-      }
-      if (isReto3 && !completedRetos.has(3)) {
-        nextBtn.disabled = true;
-        nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
-        nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 3 (${reto3Count}/4) para continuar</span>`;
-        lucide.createIcons();
-        return;
-      }
+      if (!freeNavUnlocked) {
+        if (isReto1 && !completedRetos.has(1)) {
+          nextBtn.disabled = true;
+          nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
+          nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 1 (${reto1Count}/4) para continuar</span>`;
+          lucide.createIcons();
+          return;
+        }
+        if (isReto2 && !completedRetos.has(2)) {
+          nextBtn.disabled = true;
+          nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
+          nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 2 (${reto2Step}/3) para continuar</span>`;
+          lucide.createIcons();
+          return;
+        }
+        if (isReto3 && !completedRetos.has(3)) {
+          nextBtn.disabled = true;
+          nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
+          nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Completa el Reto 3 (${reto3Count}/4) para continuar</span>`;
+          lucide.createIcons();
+          return;
+        }
 
-      if (!isItemCompleted(currentModIdx, currentItemIdx)) {
-        const prog = itemSubProgress[getItemKey()] || { readSet: new Set(), total: 1 };
-        nextBtn.disabled = true;
-        nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
-        nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Lee cada ítem (${prog.readSet.size}/${prog.total}) para continuar</span>`;
-        lucide.createIcons();
-        return;
+        if (!isItemCompleted(currentModIdx, currentItemIdx)) {
+          const prog = itemSubProgress[getItemKey()] || { readSet: new Set(), total: 1 };
+          nextBtn.disabled = true;
+          nextBtn.className = 'bg-gray-400 cursor-not-allowed text-white px-8 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-md transition-all';
+          nextBtn.innerHTML = `<i data-lucide="lock" class="w-5 h-5"></i> <span id="text-item-next">Lee cada ítem (${prog.readSet.size}/${prog.total}) para continuar</span>`;
+          lucide.createIcons();
+          return;
+        }
       }
 
       // Desbloqueado
@@ -2452,13 +2456,79 @@
           } else if (seq3 === '38,49,13' || seq3 === '38,97,13') {
             e.preventDefault(); cheatSeq = []; switchView('view-video');
           } else if (seq3 === '38,50,13' || seq3 === '38,98,13') {
-            e.preventDefault(); cheatSeq = []; currentModIdx = 0; currentItemIdx = 0; renderCurrentSlide(); switchView('view-modules');
+            e.preventDefault(); cheatSeq = []; freeNavUnlocked = true; currentModIdx = 0; currentItemIdx = 0; renderCurrentSlide(); switchView('view-modules');
           } else if (seq3 === '38,51,13' || seq3 === '38,99,13') {
             e.preventDefault(); cheatSeq = []; renderQuiz(); switchView('view-quiz');
           }
         }
       }
     }, true);
+
+    // Atajo táctil secreto para celular (5 toques seguidos en el título/badge naranja superior)
+    function attachFiveTapSecret(el, callback) {
+      if (!el) return;
+      let tapCount = 0;
+      let tapTimer = null;
+      el.addEventListener('click', () => {
+        tapCount++;
+        clearTimeout(tapTimer);
+        if (tapCount >= 5) {
+          tapCount = 0;
+          callback();
+        } else {
+          tapTimer = setTimeout(() => { tapCount = 0; }, 1400);
+        }
+      });
+    }
+
+    function unlockAndJumpToModules() {
+      freeNavUnlocked = true;
+      completedRetos.add(1);
+      completedRetos.add(2);
+      completedRetos.add(3);
+      const vid = document.getElementById('cap-video');
+      if (vid) { try { vid.pause(); } catch (e) {} }
+      const btnNext = document.getElementById('btn-video-next');
+      if (btnNext) {
+        btnNext.disabled = false;
+        btnNext.className = 'bg-accent hover:bg-accentDark text-white px-9 py-4 rounded-2xl font-black text-base sm:text-lg flex items-center justify-center gap-2.5 shadow-lg hover:scale-[1.01] transition-all cursor-pointer';
+        btnNext.innerHTML = '<span>¡Video Completado! Continuar a los Módulos</span> <i data-lucide="arrow-right" class="w-6 h-6"></i>';
+      }
+      currentModIdx = 0;
+      currentItemIdx = 0;
+      renderCurrentSlide();
+      switchView('view-modules');
+      showLockToast('🔓 Módulos desbloqueados: puedes entrar al módulo que quieras');
+    }
+
+    attachFiveTapSecret(document.getElementById('video-secret-header'), () => {
+      unlockAndJumpToModules();
+    });
+
+    attachFiveTapSecret(document.getElementById('slide-item-container'), () => {});
+    document.getElementById('slide-item-container')?.addEventListener('click', (e) => {
+      const badgeEl = e.target.closest('.bg-orange-100');
+      if (!badgeEl) return;
+      badgeEl._taps = (badgeEl._taps || 0) + 1;
+      clearTimeout(badgeEl._tapTimer);
+      if (badgeEl._taps >= 5) {
+        badgeEl._taps = 0;
+        if (!freeNavUnlocked) {
+          freeNavUnlocked = true;
+          renderCurrentSlide();
+          showLockToast('🔓 Todos los módulos e ítems quedaron desbloqueados');
+        } else {
+          renderQuiz();
+          switchView('view-quiz');
+        }
+      } else {
+        badgeEl._tapTimer = setTimeout(() => { badgeEl._taps = 0; }, 1400);
+      }
+    });
+
+    attachFiveTapSecret(document.getElementById('quiz-secret-header'), () => {
+      if (state.user.nombre && state.user.cedula) triggerCheatCode();
+    });
 
     document.getElementById('register-form').addEventListener('submit', async (e) => {
       e.preventDefault();
